@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MA Test Dashboard</title>
+<style>
+  :root{
+    --rail:#0f2742; --rail2:#17385c; --rail-ink:#bccadd; --rail-on:#1d4b7a;
+    --bg:#eef2f7; --panel:#ffffff; --panel2:#f4f7fb; --line:#e3e9f1; --ink:#162a44; --muted:#64758d;
+    --accent:#1463a8; --accent2:#0f568f;
+    --good:#1c8a4d; --good-bg:#e9f6ee; --bad:#c0392b; --bad-bg:#fbecea; --flag:#bd8a16; --due:#b34700;
+    /* exam skin (question screen stays authentic) */
+    --ex-navy:#0a2540; --ex-line:#d8dee6; --ex-ink:#1a1a1a; --ex-muted:#5b6573; --ex-good:#1c8a4d; --ex-bad:#c0392b;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);font-size:14.5px;line-height:1.5}
+  button{font-family:inherit;cursor:pointer}
+  .hidden{display:none !important}
+  .mono{font-family:var(--mono)}
+
+  /* PIN */
+  #gate{max-width:340px;margin:90px auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:30px;text-align:center}
+  #gate h1{font-size:19px;margin:0 0 4px} #gate p{color:var(--muted);font-size:13px;margin:0 0 18px}
+  #pin{width:100%;padding:12px;font-size:22px;text-align:center;letter-spacing:8px;border:1px solid var(--line);border-radius:9px;font-family:var(--mono);background:var(--panel2);color:var(--ink)}
+  #gateErr{color:var(--bad);font-size:12px;min-height:16px;margin-top:8px}
+
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600}
+  .btn:hover{filter:brightness(1.08)} .btn.sm{padding:6px 11px;font-size:12.5px}
+  .btn.ghost{background:transparent;color:var(--accent2);border:1px solid var(--line)} .btn.ghost:hover{background:var(--panel2)}
+  .btn.warn{background:var(--bad)} .btn.block{width:100%;margin-top:14px}
+
+  /* App shell */
+  #app{display:none;grid-template-columns:212px 1fr;min-height:100vh}
+  .rail{background:var(--rail);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+  .rail .brand{color:#fff;font-weight:700;font-size:15px;padding:6px 10px 16px;letter-spacing:.3px}
+  .rail .brand small{display:block;color:var(--rail-ink);font-weight:400;font-size:11px;margin-top:2px}
+  .navi{display:flex;align-items:center;gap:10px;color:var(--rail-ink);padding:9px 12px;border-radius:8px;font-size:13.5px;font-weight:600;border:none;background:transparent;text-align:left;width:100%}
+  .navi:hover{background:var(--rail2);color:#fff}
+  .navi.on{background:var(--rail-on);color:#fff;box-shadow:inset 3px 0 0 var(--flag)}
+  .navi .ic{display:inline-flex;align-items:center;justify-content:center;width:18px}
+  .navi .ic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .navi .badge{margin-left:auto;font-size:10px;background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px}
+  .rail .spacer{flex:1}
+  .rail .foot{color:var(--muted);font-size:11px;padding:8px 10px}
+
+  .main{padding:22px 26px 60px;max-width:1120px}
+  .ph{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px}
+  .ph h1{font-size:20px;margin:0} .ph .sub{color:var(--muted);font-size:13px}
+
+  .strip{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 16px;box-shadow:0 1px 2px rgba(20,40,70,.04)}
+  .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .stat .v{font-family:var(--mono);font-size:26px;font-weight:700;margin-top:6px}
+  .stat .v small{font-size:13px;color:var(--muted)}
+  .stat.good .v{color:var(--good)} .stat.bad .v{color:var(--bad)} .stat.warn .v{color:var(--flag)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px} .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 1px 2px rgba(20,40,70,.04)}
+  .panel h3{margin:0 0 4px;font-size:14px}
+  .panel .ph3{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .panel .note{color:var(--muted);font-size:12px}
+  .sep{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin:2px 0 10px;border-left:3px solid var(--accent);padding-left:8px}
+
+  table.dt{width:100%;border-collapse:collapse;font-size:13px}
+  table.dt th{text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.dt td{padding:8px;border-bottom:1px solid var(--line)}
+  table.dt tr:last-child td{border-bottom:none}
+  .bar{height:7px;border-radius:4px;background:var(--panel2);overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  .bar i.lo{background:var(--bad)} .bar i.mid{background:var(--flag)} .bar i.hi{background:var(--good)}
+  .pillc{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px}
+  .pillc.due{background:#3a2410;color:var(--due)} .pillc.grad{background:var(--good-bg);color:var(--good)} .pillc.leech{background:var(--bad-bg);color:var(--bad)}
+  .pass{color:var(--good)} .fail{color:var(--bad)}
+  .empty{color:var(--muted);font-size:13px;padding:10px 2px}
+
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  select,input[type=text],input[type=number],input[type=date]{font-family:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--ink)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{background:var(--panel2);border:none;padding:9px 14px;font-size:13px;color:var(--muted)}
+  .seg button.on{background:var(--accent);color:#fff;font-weight:600}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:8px;padding:7px 12px;font-size:13px}
+  .chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  /* ===== EXAM SKIN (question screen — authentic, light) ===== */
+  #exam{display:none;background:#eef1f5;min-height:100vh;color:var(--ex-ink)}
+  #exam .ehead{background:var(--ex-navy);color:#fff;padding:13px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:20}
+  #exam .ehead .t{font-weight:700}
+  #exam .clock{font-family:var(--mono);font-size:17px;background:rgba(255,255,255,.12);padding:5px 11px;border-radius:6px}
+  #exam .clock.low{background:var(--ex-bad)}
+  #exam .ewrap{max-width:1060px;margin:0 auto;padding:20px 18px 60px;display:grid;grid-template-columns:1fr 220px;gap:18px}
+  #exam .qpanel{background:#fff;border:1px solid var(--ex-line);border-radius:12px;padding:24px;min-height:420px}
+  #exam .qhead{display:flex;justify-content:space-between;color:var(--ex-muted);font-size:13px;margin-bottom:8px}
+  #exam .qsub{font-weight:600;color:#1463a8}
+  #exam .stem{font-size:17px;margin:6px 0 18px;line-height:1.55}
+  #exam .opts{display:flex;flex-direction:column;gap:10px}
+  #exam .opt{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--ex-line);border-radius:9px;padding:13px 15px;background:#fff;cursor:pointer}
+  #exam .opt:hover{border-color:#1463a8;background:#f7fbff}
+  #exam .opt.sel{border-color:#1463a8;background:#eef6ff;box-shadow:inset 0 0 0 1px #1463a8}
+  #exam .opt.struck .otext{text-decoration:line-through;color:#aab2bd}
+  #exam .opt .okey{font-weight:700;min-width:20px}.opt .otext{flex:1}
+  #exam .opt .strike{margin-left:auto;font-size:12px;color:var(--ex-muted);border:1px solid var(--ex-line);border-radius:6px;padding:2px 7px;background:#fff}
+  #exam .numwrap{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  #exam .numwrap input,#exam .numwrap select{width:auto;font-size:17px;font-family:var(--mono);background:#fff;color:var(--ex-ink);border:1px solid var(--ex-line)}
+  #exam textarea{font-family:var(--mono);font-size:14px;background:#fff;color:var(--ex-ink);border:1px solid var(--ex-line);border-radius:8px;padding:10px;width:100%}
+  #exam .working{margin-top:18px}
+  #exam .working label{font-size:12px;font-weight:700;color:var(--ex-muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px}
+  #exam .working textarea{min-height:90px}
+  #exam .qnav{display:flex;gap:10px;margin-top:22px;align-items:center}
+  #exam .btn{background:#1463a8} #exam .btn.ghost{background:#fff;color:#1463a8;border:1px solid #1463a8} #exam .btn.warn{background:var(--ex-bad)}
+  #exam .navbtns{margin-left:auto;display:flex;gap:8px}
+  #exam .side .card{background:#fff;border:1px solid var(--ex-line);border-radius:11px;padding:14px;margin-bottom:14px}
+  #exam .navgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+  #exam .navg{aspect-ratio:1;border:1px solid var(--ex-line);border-radius:7px;background:#fff;font-size:13px;font-weight:600;color:var(--ex-muted);position:relative}
+  #exam .navg.ans{background:#e7eef9;border-color:#9bb6dd;color:var(--ex-navy)}
+  #exam .navg.flag{box-shadow:inset 0 0 0 2px var(--flag)} #exam .navg.cur{outline:2px solid #1463a8;outline-offset:1px}
+  #exam .navg .fdot{position:absolute;top:2px;right:3px;color:var(--flag);font-size:10px}
+  #exam .legend{font-size:11px;color:var(--ex-muted);margin-top:8px}
+  #exam .label{font-size:12px;font-weight:700;color:var(--ex-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}
+
+  /* presubmit & review reuse exam skin colors but on shell.
+     Visibility is controlled solely by toggling the .hidden class in JS — do NOT add
+     a plain #presub,#review{display:none} here: it is not overridden by removing .hidden,
+     so it left the result screen rendered-but-invisible (blank result screen, bug #3). */
+  .scorebar{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+  .scorebar .big{font-family:var(--mono);font-size:28px;font-weight:800}
+  .revq{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:14px}
+  .revq .qh{display:flex;justify-content:space-between;margin-bottom:8px}
+  .qmark{font-family:var(--mono);font-weight:700;font-size:12.5px;padding:3px 10px;border-radius:20px}
+  .qmark.ok{background:var(--good-bg);color:var(--good)} .qmark.no{background:var(--bad-bg);color:var(--bad)}
+  .ropt{border:1px solid var(--line);border-radius:9px;padding:11px 14px;margin:8px 0}
+  .ropt.correct{border-color:#2c6b45;background:var(--good-bg)} .ropt.your{border-color:#7a322c;background:var(--bad-bg)}
+  .ropt .tag{font-weight:700;font-size:12.5px;margin-left:8px}.ropt .tag.c{color:var(--good)}.ropt .tag.y{color:var(--bad)}
+  .ropt .reason{color:var(--muted);font-size:13px;margin-top:5px}
+  .workdiff{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  .workdiff .box{border:1px solid var(--line);border-radius:9px;padding:11px;background:var(--panel2)}
+  .workdiff h4{margin:0 0 6px;font-size:11px;text-transform:uppercase;color:var(--muted)}
+  .workdiff pre{margin:0;font-family:var(--mono);font-size:12.5px;white-space:pre-wrap;color:var(--ink)}
+  .aislip{background:#fff8e8;border:1px solid #ecd9a6;border-radius:8px;padding:9px 12px;font-size:12.5px;color:#6b5a1f;margin-top:6px}
+  .layers{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+  .layer .lh{display:flex;gap:8px;align-items:center;color:var(--accent2);font-weight:700;font-size:12.5px;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;padding:6px 0}
+  .layer .lb{padding:4px 0 10px;font-size:14px;line-height:1.6}
+  .layer .lb.code{background:#0a1322;color:#cfe0f5;font-family:var(--mono);font-size:13px;border-radius:8px;padding:13px 15px;white-space:pre-wrap}
+  .layer .lb.tip{background:#fffae6;border-left:4px solid var(--flag);padding:11px 13px;border-radius:0 8px 8px 0;color:#6b5a1f}
+  .teacher{background:var(--panel2);border-radius:9px;padding:13px 15px;margin-top:10px}.teacher h4{margin:0 0 5px;font-size:11px;color:var(--accent2);text-transform:uppercase}
+  .pm{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+  .pm label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:8px}
+  .pmopts,.selfmark{display:flex;gap:8px;flex-wrap:wrap}
+  .pmopts button,.selfmark button{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:20px;padding:6px 13px;font-size:12.5px}
+  .pmopts button.on{background:var(--rail);color:#fff;border-color:var(--rail)}.selfmark button.on{background:var(--accent);color:#fff}
+
+  /* floats */
+  #calc,#pad{position:fixed;right:18px;bottom:18px;width:248px;background:#fff;border:1px solid var(--ex-line);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.4);z-index:60;padding:12px;color:var(--ex-ink)}
+  #pad{width:300px}
+  #calc .disp{font-family:var(--mono);font-size:22px;text-align:right;background:#0a2540;color:#fff;border-radius:8px;padding:9px 12px;margin-bottom:8px}
+  .ckeys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .ckeys button{padding:11px 0;border:1px solid var(--ex-line);background:#f7f9fc;border-radius:7px;font-size:15px;color:var(--ex-ink)}
+  .ckeys button.op{background:#e7eef9;color:#0a2540;font-weight:700}.ckeys button.eq{background:#1463a8;color:#fff;font-weight:700}.ckeys button.mem{font-size:13px;color:#5b6573}
+  .float-h{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;font-weight:700;color:#5b6573}.float-h .x{cursor:pointer}
+  #pad textarea{min-height:160px;font-family:var(--mono);font-size:13px;width:100%;border:1px solid var(--ex-line);border-radius:8px;padding:8px;color:var(--ex-ink)}
+  .grid-sum{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:8px;margin:14px 0}
+  .ss{border:1px solid var(--line);border-radius:7px;padding:9px 0;text-align:center;font-size:13px;font-weight:600;background:var(--panel2)}
+  .ss.ans{background:var(--rail-on);color:#fff} .ss.blank{background:var(--bad-bg);color:var(--bad)} .ss.flag{box-shadow:inset 0 0 0 2px var(--flag)}
+  @media(max-width:820px){#app{grid-template-columns:1fr}.rail{position:static;height:auto;flex-direction:row;flex-wrap:wrap}.strip{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}#exam .ewrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- PIN -->
+<div id="gate">
+  <h1>MA Test Dashboard</h1><p>Enter your PIN.</p>
+  <input id="pin" maxlength="6" inputmode="numeric" placeholder="••••" autocomplete="off">
+  <div id="gateErr"></div>
+  <button class="btn block" id="gateBtn">Unlock</button>
+</div>
+
+<!-- APP SHELL -->
+<div id="app">
+  <nav class="rail">
+    <div class="brand">MA Test<small>Management Accounting</small></div>
+    <button class="navi on" data-tab="overview"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><rect x="5" y="11" width="3.4" height="7"/><rect x="10.3" y="6" width="3.4" height="12"/><rect x="15.6" y="14" width="3.4" height="4"/></svg></span> Overview</button>
+    <button class="navi" data-tab="practice"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 20l3-1L18 8l-2-2L5 17z"/><path d="M14 6l4 4"/></svg></span> Practice</button>
+    <button class="navi" data-tab="chtest"><span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg></span> Chapter test</button>
+    <button class="navi" data-tab="multi"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg></span> Multi-chapter</button>
+    <button class="navi" data-tab="stress"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 18a9 9 0 0118 0"/><path d="M12 18l4-5"/></svg></span> Stress</button>
+    <button class="navi" data-tab="mock"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></span> Mock</button>
+    <button class="navi" data-tab="mistakes"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 9a8 8 0 0114-3l2 2"/><path d="M20 4v4h-4"/><path d="M20 15a8 8 0 01-14 3l-2-2"/><path d="M4 20v-4h4"/></svg></span> Mistakes <span class="badge" id="cBadge">0</span></button>
+    <div class="spacer"></div>
+    <div class="foot" id="railFoot"></div>
+  </nav>
+  <div class="main" id="main"></div>
+</div>
+
+<!-- EXAM (question screen) -->
+<div id="exam">
+  <div class="ehead"><div class="t" id="exTitle">Test</div><div class="clock" id="clock">00:00</div></div>
+  <div class="ewrap">
+    <div class="qpanel" id="qpanel"></div>
+    <div class="side">
+      <div class="card"><div class="label">Navigator</div><div class="navgrid" id="navgrid"></div>
+        <div class="legend">▢ unseen · ▣ answered · ⚑ flagged</div></div>
+      <div class="card">
+        <button class="btn ghost sm" id="calcToggle" style="width:100%;margin-bottom:8px">Calculator</button>
+        <button class="btn ghost sm" id="padToggle" style="width:100%;margin-bottom:8px">Scratchpad</button>
+        <button class="btn warn sm" id="submitBtn" style="width:100%">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRESUBMIT -->
+<div id="app2"></div>
+<div class="main hidden" id="presub" style="max-width:760px;margin:0 auto">
+  <div class="panel"><h3>Before you submit</h3><p class="note" id="presubMsg"></p>
+    <div class="grid-sum" id="presubGrid"></div>
+    <div class="row"><button class="btn ghost" id="backToTest">Back</button><button class="btn warn" id="confirmSubmit">Submit now</button></div>
+  </div>
+</div>
+
+<!-- REVIEW -->
+<div class="main hidden" id="review">
+  <div class="scorebar"><div><div class="note">Result</div><div id="revTitle" style="font-weight:700"></div></div>
+    <div style="text-align:right"><div class="big" id="revScore"></div><div id="revVerdict" style="font-size:12.5px;font-weight:700"></div></div></div>
+  <div id="revBody"></div>
+  <button class="btn" id="revHome">Back to overview</button>
+</div>
+
+<!-- Calc -->
+<div id="calc" class="hidden">
+  <div class="float-h"><span>Calculator</span><span class="x" id="calcX">✕</span></div>
+  <div class="disp" id="cdisp">0</div>
+  <div class="ckeys">
+    <button class="mem" data-k="MC">MC</button><button class="mem" data-k="MR">MR</button><button class="mem" data-k="M+">M+</button><button class="mem" data-k="M-">M-</button>
+    <button data-k="C">C</button><button data-k="±">±</button><button data-k="%">%</button><button class="op" data-k="÷">÷</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="op" data-k="×">×</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="-">−</button>
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="+">+</button>
+    <button data-k="√">√</button><button data-k="0">0</button><button data-k=".">.</button><button class="eq" data-k="=">=</button>
+  </div>
+</div>
+<div id="pad" class="hidden">
+  <div class="float-h"><span>Scratchpad</span><span class="x" id="padX">✕</span></div>
+  <textarea id="padArea" placeholder="Rough work (not marked)…"></textarea>
+</div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const PIN="1234";
+const FIREBASE_CONFIG=null;
+const PACE_PER_MARK=72;
+const MODE_SECS_PER_MARK={chtest:108, multi:108, stress:78};
+const TEST_MODES=["chtest","multi","stress","mock"]; // count toward TEST performance
+const SECTIONS={A:"Cost & data",B:"Cost accounting",C:"Cost techniques",D:"Budgeting",E:"Standard costing",F:"Performance"};
+
+/* ===================== CONTENT (seed, verified) ===================== */
+const CONCEPTS={
+  "E-mat-price":{conceptRef:"E-mat-price",ch:23,area:"E",title:"Material price variance",
+    L0_story:"Picture buying flour for a bakery. You budgeted a price per bag; the day you bought, the price had shifted. The price variance is just that gap — planned price per unit versus paid price per unit — times every unit you bought. It isolates the 'paid-more-or-less' effect from whether you used too much.",
+    L1_concept:"The material price variance measures the effect of paying a different price than standard for the materials purchased.",
+    keyRule:"Price variance = (Standard price − Actual price) × Actual quantity purchased. Negative = adverse.",
+    L3_standard:"Total material variance splits into price (purchasing) and usage (production). Price is valued on quantity purchased.",
+    sourcePointer:"Kaplan — Standard Costing: material variances · ACCA Study Hub E2"},
+  "E-opstmt":{conceptRef:"E-opstmt",ch:23,area:"E",title:"Operating statement",
+    L0_story:"The operating statement is the story of how budgeted profit became real profit. Start at standard profit, then walk each variance up (favourable) or down (adverse) a staircase, landing on actual profit. Every variance is one stair.",
+    L1_concept:"An operating statement reconciles standard profit to actual profit by listing each variance as favourable or adverse.",
+    keyRule:"Standard profit ± each variance = Actual profit.",
+    L3_standard:"Absorption vs marginal presentation differ in fixed overhead volume treatment.",
+    sourcePointer:"Kaplan — Standard Costing: operating statements · ACCA Study Hub E3"}
+};
+function q_mpv_mcq(id){return {qId:id,ch:23,area:"E",conceptRef:"E-mat-price",subTopic:"Material price variance",difficulty:"medium",type:"ot",marks:2,responseType:"mcq",
+  stem:"Standard price £5.00/kg. 10,000 kg bought at £5.20/kg. Material price variance?",
+  options:[{key:"A",text:"£2,000 Adverse",correct:true,reasoning:"(5.00−5.20)×10,000 = −£2,000 → adverse.",misconception:null},
+    {key:"B",text:"£2,000 Favourable",correct:false,reasoning:"Right size, wrong direction — paying more is adverse.",misconception:"sign-reversal"},
+    {key:"C",text:"£200 Adverse",correct:false,reasoning:"Forgot to multiply the £0.20 by 10,000 kg.",misconception:"omits quantity multiplier"},
+    {key:"D",text:"£1,000 Adverse",correct:false,reasoning:"Used the wrong quantity base.",misconception:"wrong quantity base"}],
+  layers:{L2_working:"Step 1: 5.00 − 5.20 = −0.20\nStep 2: ×10,000 = −£2,000\nStep 3: negative ⇒ Adverse",L4_whyEachOption:"auto",L5_examiner:"The trap is direction: paid more = adverse. Check purchased vs used.",L6_advanced:"Pairs with usage variance to reconcile total material cost.",teacher:"Concept: price gap per unit × units bought. Everyday: £5 flour, paid £5.20 on 10,000 bags → £2,000 worse."},examTip:"Decide adverse/favourable before the number."};}
+const TEST_POOLS={
+  "23-A":{ch:23,area:"E",pool:"A",questions:[
+    q_mpv_mcq("E-23-A-001"),
+    {qId:"E-23-A-002",ch:23,area:"E",conceptRef:"E-mat-price",subTopic:"Material price variance",difficulty:"medium",type:"ot",marks:2,responseType:"number",
+      stem:"Standard price £8/kg; 4,000 kg purchased at £7.50/kg. Enter the variance (£, positive) and pick the direction.",
+      number:{correctAnswer:2000,tolerance:0,roundingDp:0,unit:"£"},dropdowns:[{id:"dir",label:"Direction",options:["Adverse","Favourable"],correct:"Favourable"}],
+      layers:{L2_working:"(8.00 − 7.50) × 4,000 = £2,000. Positive ⇒ Favourable.",L4_whyEachOption:"auto",L5_examiner:"Cheaper than standard is favourable — watch a paired adverse usage variance.",L6_advanced:"Cheap, low-quality material links price and usage.",teacher:"Paid 50p less on 4,000 kg = £2,000 saved."},examTip:"Favourable when actual < standard."},
+    {qId:"E-23-A-003",ch:23,area:"E",conceptRef:"E-opstmt",subTopic:"Operating statement",difficulty:"hard",type:"mtq",marks:6,
+      scenario:"Standard profit £40,000. Variances: sales price £3,000 F; material price £2,000 A; labour efficiency £1,500 A.",
+      parts:[{partId:"a",prompt:"Actual profit (£)?",kind:"numeric",marks:3,correctAnswer:39500,tolerance:0,roundingDp:0,workingField:true},
+        {partId:"b",prompt:"Net effect of the three variances?",kind:"dropdown",marks:1,options:["Favourable","Adverse"],correct:"Adverse"},
+        {partId:"c",prompt:"Explain why the material price variance is adverse.",kind:"narrative",marks:2,modelAnswer:"Actual price exceeded standard, so for the quantity purchased more was spent than budgeted, reducing profit — adverse.",selfMark:true}],
+      layers:{L2_working:"Actual = 40,000 + 3,000 − 2,000 − 1,500 = £39,500.\nNet = 3,000 − 2,000 − 1,500 = −£500 ⇒ adverse.",L4_whyEachOption:"auto",L5_examiner:"Favourable adds, adverse subtracts — keep signs straight.",L6_advanced:"Full operating statements extend this to every line.",teacher:"Walk from standard profit to actual via each variance."},examTip:"Lay variances in a +/− column."}
+  ]},
+  "23-B":{ch:23,area:"E",pool:"B",questions:[
+    {qId:"E-23-B-001",ch:23,area:"E",conceptRef:"E-mat-price",subTopic:"Material price variance",difficulty:"easy",type:"ot",marks:2,responseType:"multi",partialCredit:false,
+      stem:"Which statements about the material PRICE variance are correct? (Select all.)",
+      options:[{key:"A",text:"Valued on quantity purchased.",correct:true,reasoning:"Correct.",misconception:null},
+        {key:"B",text:"Valued on quantity used.",correct:false,reasoning:"That is the usage variance.",misconception:"confuses price/usage base"},
+        {key:"C",text:"Paying less than standard is favourable.",correct:true,reasoning:"Correct.",misconception:null},
+        {key:"D",text:"Captures how efficiently material was consumed.",correct:false,reasoning:"That is usage/efficiency.",misconception:"usage meaning on price"}],
+      layers:{L2_working:"Price = (SP−AP) × quantity PURCHASED. Lower actual price ⇒ favourable.",L4_whyEachOption:"auto",L5_examiner:"Price = purchased; usage = used.",L6_advanced:"Right quantity base separates the two variances.",teacher:"Price is £/unit bought, not amount used."},examTip:"Price → purchased; Usage → used."}
+  ]}
+};
+/* PRACTICE banks: [ch][source] (seed: ch23 Kaplan). Upload to add others. */
+const PRACTICE={ 23:{ "Kaplan":{ch:23,area:"E",source:"Kaplan",questions:[ q_mpv_mcq("E-23-K-001") ]}, "BPP":null, "Study Text":null } };
+const CHTEST={ 23:{ A:TEST_POOLS["23-A"].questions, B:TEST_POOLS["23-B"].questions } }; /* uploaded: ch -> {A:[],B:[]} */
+const MANIFEST=[{ch:23,area:"E",title:"Standard costing",pools:["A","B"]}];
+
+/* ===================== STORAGE ===================== */
+const K_ATT="ma_attempts",K_IN="ma_inprogress",K_QUEUE="acca_v4_pending_imports",K_EXAM="ma_exam_date",K_BANKS="ma_banks",K_MIST="ma_mistakes_store",K_CONCEPTS="ma_concepts",K_MANIFEST="ma_manifest";
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function getAttempts(){return load(K_ATT,[]);}
+function examDate(){return localStorage.getItem(K_EXAM)||"";}
+function persistBanks(){save(K_BANKS,{practice:PRACTICE,chtest:CHTEST});save(K_CONCEPTS,CONCEPTS);}
+function rehydrateBanks(){
+  const b=load(K_BANKS,null);
+  if(b){
+    if(b.practice)Object.keys(b.practice).forEach(ch=>{PRACTICE[ch]=Object.assign({},PRACTICE[ch]||{},b.practice[ch]);});
+    if(b.chtest)Object.keys(b.chtest).forEach(ch=>{CHTEST[ch]=Object.assign({},CHTEST[ch]||{},b.chtest[ch]);});
+  }
+  const sc=load(K_CONCEPTS,null);if(sc)Object.assign(CONCEPTS,sc);
+  const sm=load(K_MANIFEST,null);if(sm&&Array.isArray(sm)){sm.forEach(e=>{if(e&&e.ch!=null&&!MANIFEST.some(x=>x.ch===e.ch))MANIFEST.push(e);});MANIFEST.sort((a,b)=>a.ch-b.ch);}
+}
+/* MANIFEST helpers (bug #1): keep uploaded chapters in the dropdowns and persist them. */
+function chapterOptions(){return MANIFEST.map(x=>`<option value="${x.ch}">Ch ${x.ch}${x.title?' · '+esc(x.title):''}</option>`).join('');}
+function fillChapterSelect(selId,ch){const s=document.getElementById(selId);if(!s)return;s.innerHTML=chapterOptions();if(ch!=null)s.value=ch;}
+function ensureManifest(ch,area,title){
+  if(ch==null)return;ch=parseInt(ch,10);if(isNaN(ch))return;
+  if(!MANIFEST.some(x=>x.ch===ch)){MANIFEST.push({ch:ch,area:area||"",title:title||"",pools:["A","B"]});MANIFEST.sort((a,b)=>a.ch-b.ch);}
+  save(K_MANIFEST,MANIFEST);
+}
+
+/* ===================== STATE ===================== */
+let S={mode:"chtest",set:"A",ch:23,source:"Kaplan",isC:false,scope:[],questions:[],idx:0,answers:{},flags:{},working:{},struck:{},scratch:"",startedAt:0,timeLimit:0,timerId:null};
+let LAST_SYNCED=false;
+
+/* ===================== INIT ===================== */
+function init(){
+  document.getElementById('gateBtn').onclick=unlock;
+  document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')unlock();});
+  document.querySelectorAll('.navi').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+  document.getElementById('submitBtn').onclick=trySubmit;
+  document.getElementById('confirmSubmit').onclick=()=>finishTest();
+  document.getElementById('backToTest').onclick=()=>{document.getElementById('presub').classList.add('hidden');document.getElementById('exam').style.display='block';};
+  document.getElementById('revHome').onclick=()=>{document.getElementById('review').classList.add('hidden');document.getElementById('app').style.display='grid';showTab('overview');};
+  document.getElementById('calcToggle').onclick=()=>toggle('calc');
+  document.getElementById('padToggle').onclick=()=>toggle('pad');
+  document.getElementById('calcX').onclick=()=>document.getElementById('calc').classList.add('hidden');
+  document.getElementById('padX').onclick=()=>document.getElementById('pad').classList.add('hidden');
+  document.getElementById('padArea').addEventListener('input',e=>{S.scratch=e.target.value;autosave();});
+  rehydrateBanks();
+  initCalc();
+}
+function unlock(){const v=document.getElementById('pin').value.trim();if(v===PIN){document.getElementById('gate').classList.add('hidden');document.getElementById('app').style.display='grid';showTab('overview');}else document.getElementById('gateErr').textContent="Incorrect PIN.";}
+
+/* ===================== TABS ===================== */
+function showTab(t){
+  document.querySelectorAll('.navi').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  document.getElementById('cBadge').textContent=computePoolC('all').due;
+  document.getElementById('railFoot').textContent=examDate()?("Exam "+examDate()):"Set exam date →";
+  const m=document.getElementById('main');
+  if(t==='overview')renderOverview(m);
+  else if(t==='practice')renderPractice(m);
+  else if(t==='chtest')renderChTest(m);
+  else if(t==='multi')renderMulti(m);
+  else if(t==='stress')renderUpload(m,'stress');
+  else if(t==='mock')renderUpload(m,'mock');
+  else if(t==='mistakes')renderMistakes(m);
+}
+
+/* ---------- OVERVIEW ---------- */
+function perf(modeFilter){ // {pct,attempts,marks}
+  const a=getAttempts().filter(x=>!x.rePractice && modeFilter(x.mode));
+  let s=0,p=0; a.forEach(x=>{s+=x.totalScore;p+=x.totalPossible;});
+  return {pct:p?Math.round(100*s/p):0,n:a.length,s,p};
+}
+function daysToExam(){const d=examDate();if(!d)return null;return Math.ceil((new Date(d)-new Date())/86400000);}
+function renderOverview(m){
+  const test=perf(md=>TEST_MODES.includes(md)), prac=perf(md=>md==='practice');
+  const c=computePoolC('all'); const dte=daysToExam();
+  const weak=weakAreas().slice(0,6);
+  m.innerHTML=`<div class="ph"><div><h1>Overview</h1><div class="sub">Test performance is kept separate from practice. Weak areas and mistakes pool both.</div></div>
+     <div class="row"><div class="field"><label>Exam date</label><input type="date" id="exDate" value="${examDate()}"></div></div></div>
+   ${load(K_IN,null)?`<div class="panel" style="border-left:4px solid var(--flag)"><div class="row" style="justify-content:space-between;align-items:center"><span><b>Unfinished test in progress.</b> Your answers and working are saved.</span><button class="btn" id="resumeBtn">Resume test</button></div></div>`:''}
+   <div class="strip">
+     <div class="stat ${test.pct>=50?'good':'bad'}"><div class="k">Test score</div><div class="v">${test.n?test.pct+'<small>%</small>':'—'}</div></div>
+     <div class="stat"><div class="k">Test attempts</div><div class="v">${test.n}</div></div>
+     <div class="stat warn"><div class="k">Practice score</div><div class="v">${prac.n?prac.pct+'<small>%</small>':'—'}</div></div>
+     <div class="stat ${c.due?'bad':''}"><div class="k">Mistakes due</div><div class="v">${c.due}<small>/${c.items.length}</small></div></div>
+     <div class="stat"><div class="k">Days to exam</div><div class="v">${dte==null?'—':dte}</div></div>
+   </div>
+   <div class="grid2">
+     <div class="panel"><div class="sep">Test performance — chapter / multi / stress / mock only</div>
+       ${test.n?`<table class="dt"><tr><th>Mode</th><th>Attempts</th><th>Score</th></tr>${perfRows(md=>TEST_MODES.includes(md))}</table>`:'<div class="empty">No test attempts yet.</div>'}</div>
+     <div class="panel"><div class="sep">Practice performance — separate, doesn’t affect test signal</div>
+       ${prac.n?`<table class="dt"><tr><th>Source</th><th>Attempts</th><th>Score</th></tr>${practiceRows()}</table>`:'<div class="empty">No practice attempts yet.</div>'}</div>
+   </div>
+   <div class="grid2">
+     <div class="panel"><div class="sep">Weak areas — pooled across practice + tests</div>
+       ${weak.length?`<table class="dt"><tr><th>Sub-topic</th><th>Acc.</th><th></th></tr>${weak.map(w=>{const cls=w.pct<50?'lo':(w.pct<75?'mid':'hi');return `<tr><td>${esc(w.topic)} <span class="note">(Ch ${w.ch})</span></td><td class="mono">${w.pct}%</td><td style="width:120px"><div class="bar"><i class="${cls}" style="width:${w.pct}%"></i></div></td></tr>`;}).join('')}</table>`:'<div class="empty">No data yet.</div>'}</div>
+     <div class="panel"><div class="sep">Mistakes (Pool C)</div>
+       <table class="dt"><tr><td>Due today</td><td style="text-align:right"><span class="pillc due">${c.due}</span></td></tr>
+       <tr><td>Graduating (1 of 2)</td><td style="text-align:right"><span class="pillc grad">${c.graduating}</span></td></tr>
+       <tr><td>Repeat offenders (3+)</td><td style="text-align:right"><span class="pillc leech">${c.leeches}</span></td></tr>
+       <tr><td>Total in Pool C</td><td style="text-align:right" class="mono">${c.items.length}</td></tr></table></div>
+   </div>
+   <div class="panel"><div class="sep">Recent attempts</div>${recentTable()}</div>`;
+  document.getElementById('exDate').addEventListener('change',e=>{localStorage.setItem(K_EXAM,e.target.value);showTab('overview');});
+  const rb=document.getElementById('resumeBtn');if(rb)rb.onclick=resumeTest;
+}
+function perfRows(f){const a=getAttempts().filter(x=>!x.rePractice&&f(x.mode));const by={};a.forEach(x=>{(by[x.mode]=by[x.mode]||{s:0,p:0,n:0});by[x.mode].s+=x.totalScore;by[x.mode].p+=x.totalPossible;by[x.mode].n++;});
+  return Object.keys(by).map(md=>{const o=by[md];const pct=o.p?Math.round(100*o.s/o.p):0;return `<tr><td>${md}</td><td class="mono">${o.n}</td><td class="mono ${pct>=50?'pass':'fail'}">${pct}%</td></tr>`;}).join('')||'<tr><td colspan=3 class="empty">—</td></tr>';}
+function practiceRows(){const a=getAttempts().filter(x=>!x.rePractice&&x.mode==='practice');const by={};a.forEach(x=>{const src=x.set||'?';(by[src]=by[src]||{s:0,p:0,n:0});by[src].s+=x.totalScore;by[src].p+=x.totalPossible;by[src].n++;});
+  return Object.keys(by).map(src=>{const o=by[src];const pct=o.p?Math.round(100*o.s/o.p):0;return `<tr><td>${esc(src)}</td><td class="mono">${o.n}</td><td class="mono ${pct>=50?'pass':'fail'}">${pct}%</td></tr>`;}).join('')||'<tr><td colspan=3 class="empty">—</td></tr>';}
+function weakAreas(){const a=getAttempts().filter(x=>!x.rePractice);const by={};a.forEach(x=>{(x.questions||[]).forEach(q=>{const key=q.subTopic||'?';(by[key]=by[key]||{topic:key,ch:x.ch,s:0,p:0});by[key].s+=q.earned;by[key].p+=q.marks;});});
+  return Object.values(by).map(o=>({topic:o.topic,ch:o.ch,pct:o.p?Math.round(100*o.s/o.p):0})).sort((x,y)=>x.pct-y.pct);}
+function recentTable(){const a=getAttempts().slice().reverse().slice(0,10);if(!a.length)return '<div class="empty">No attempts yet.</div>';
+  return `<table class="dt"><tr><th>When</th><th>Type</th><th>Set</th><th>Score</th></tr>${a.map(x=>{const pct=x.totalPossible?Math.round(100*x.totalScore/x.totalPossible):0;return `<tr><td>${(x.submittedAt||x.date||'').slice(0,16).replace('T',' ')}</td><td>${x.mode}${x.rePractice?' · re-practice':''}</td><td>${esc(x.set||'')}</td><td class="mono ${pct>=50?'pass':'fail'}">${x.totalScore}/${x.totalPossible} · ${pct}%</td></tr>`;}).join('')}</table>`;}
+
+/* ---------- PRACTICE ---------- */
+function renderPractice(m){
+  m.innerHTML=`<div class="ph"><div><h1>Practice</h1><div class="sub">Flexible time, per-question timing. Scored, but kept off your test performance.</div></div></div>
+    <div class="panel"><div class="row">
+      <div class="field"><label>Chapter</label><select id="pCh">${chapterOptions()}</select></div>
+      <div class="field"><label>Source</label><div class="seg" id="pSrc"><button data-v="BPP">BPP</button><button data-v="Kaplan" class="on">Kaplan</button><button data-v="Study Text">Study Text</button></div></div>
+      <button class="btn" id="pStart">Start practice</button>
+      <button class="btn ghost sm" id="pImp">Upload source JSON</button><input type="file" id="pFile" accept="application/json" class="hidden">
+    </div><p class="note" id="pNote" style="margin-top:12px"></p></div>`;
+  let src="Kaplan";
+  m.querySelectorAll('#pSrc button').forEach(b=>b.onclick=()=>{m.querySelectorAll('#pSrc button').forEach(x=>x.classList.remove('on'));b.classList.add('on');src=b.dataset.v;checkP();});
+  function checkP(){const ch=parseInt(document.getElementById('pCh').value,10);const bank=(PRACTICE[ch]||{})[src];document.getElementById('pNote').textContent=bank&&bank.questions&&bank.questions.length?`${bank.questions.length} ${src} questions loaded for Ch ${ch}.`:`No ${src} questions for Ch ${ch} yet — upload its JSON.`;}
+  document.getElementById('pCh').onchange=checkP; checkP();
+  document.getElementById('pStart').onclick=()=>{const ch=parseInt(document.getElementById('pCh').value,10);const bank=(PRACTICE[ch]||{})[src];if(!bank||!bank.questions||!bank.questions.length){alert("No questions for that source/chapter — upload its JSON.");return;}startSession({mode:'practice',set:src,ch,questions:bank.questions.slice(),timed:false});};
+  document.getElementById('pImp').onclick=()=>document.getElementById('pFile').click();
+  document.getElementById('pFile').addEventListener('change',e=>importJSON(e,'practice',src,checkP));
+}
+
+/* ---------- CHAPTER TEST ---------- */
+function renderChTest(m){
+  m.innerHTML=`<div class="ph"><div><h1>Chapter test</h1><div class="sub">Single chapter, timed. Upload one file per chapter holding both Pool A and B.</div></div></div>
+    <div class="panel"><div class="row">
+      <div class="field"><label>Chapter</label><select id="tCh">${chapterOptions()}</select></div>
+      <div class="field"><label>Pool</label><div class="seg" id="tPool"><button data-v="A" class="on">Pool A</button><button data-v="B">Pool B</button></div></div>
+      <button class="btn" id="tStart">Start test</button>
+      <button class="btn ghost sm" id="tImp">Upload chapter test JSON</button><input type="file" id="tFile" accept="application/json" class="hidden">
+    </div><p class="note" id="tNote" style="margin-top:12px"></p></div>`;
+  let pool="A";
+  function chk(){const ch=parseInt(document.getElementById('tCh').value,10);const f=CHTEST[ch]||{};const n=(f[pool]||[]).length;document.getElementById('tNote').textContent=n?`${n} questions in Pool ${pool} for Ch ${ch}.`:`No Pool ${pool} for Ch ${ch} yet — upload its JSON.`;}
+  m.querySelectorAll('#tPool button').forEach(b=>b.onclick=()=>{m.querySelectorAll('#tPool button').forEach(x=>x.classList.remove('on'));b.classList.add('on');pool=b.dataset.v;chk();});
+  document.getElementById('tCh').onchange=chk; chk();
+  document.getElementById('tStart').onclick=()=>{const ch=parseInt(document.getElementById('tCh').value,10);const qs=(CHTEST[ch]||{})[pool];if(!qs||!qs.length){alert("No Pool "+pool+" for that chapter — upload its JSON.");return;}startSession({mode:'chtest',set:pool,ch,questions:qs.slice(),timed:true});};
+  document.getElementById('tImp').onclick=()=>document.getElementById('tFile').click();
+  document.getElementById('tFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(j.ch==null||!j.pools)throw 0;CHTEST[j.ch]={A:(j.pools.A||[]),B:(j.pools.B||[])};if(j.concepts)Object.assign(CONCEPTS,j.concepts);persistBanks();ensureManifest(j.ch,j.area,j.title);fillChapterSelect('tCh',parseInt(j.ch,10));alert("Imported Ch "+j.ch+": Pool A "+(j.pools.A||[]).length+", Pool B "+(j.pools.B||[]).length+".");chk();}catch(err){alert("Invalid chapter-test file — need { ch, pools:{A:[…],B:[…]} }.");}};r.readAsText(f);});
+}
+
+/* ---------- MULTI-CHAPTER ---------- */
+function renderMulti(m){
+  m.innerHTML=`<div class="ph"><div><h1>Multi-chapter test</h1><div class="sub">A self-contained set you upload (not assembled from pools), timed.</div></div></div>
+    <div class="panel"><div class="row"><button class="btn ghost" id="mImp">Upload multi-chapter JSON</button><input type="file" id="mFile" accept="application/json" class="hidden"><span class="note" id="mNote">No multi-chapter file loaded.</span></div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="mStart" disabled>Start multi-chapter test</button></div></div>`;
+  let loaded=null;
+  document.getElementById('mImp').onclick=()=>document.getElementById('mFile').click();
+  document.getElementById('mFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(!j.questions||!j.questions.length)throw 0;loaded=j;ensureManifest(j.ch,j.area,j.title);if(j.concepts){Object.assign(CONCEPTS,j.concepts);persistBanks();}document.getElementById('mNote').textContent=`${j.questions.length} questions loaded${j.title?' · '+j.title:''}.`;document.getElementById('mStart').disabled=false;}catch(err){alert("Invalid file — need { questions:[…] }.");}};r.readAsText(f);});
+  document.getElementById('mStart').onclick=()=>{if(!loaded)return;startSession({mode:'multi',set:'multi',ch:loaded.ch||0,questions:loaded.questions.slice(),timed:true});};
+}
+
+/* ---------- STRESS / MOCK (uploaded) ---------- */
+function renderUpload(m,kind){
+  const isMock=kind==='mock';
+  m.innerHTML=`<div class="ph"><div><h1>${isMock?'Mock exam':'Stress test'}</h1><div class="sub">${isMock?'Full exam: 35 OT + 3 MTQ, 120 minutes. Upload your mock file.':'Hardest questions, tighter clock. Upload your stress set.'}</div></div></div>
+    <div class="panel"><div class="row"><button class="btn ghost" id="upBtn">Upload ${kind} JSON</button><input type="file" id="upFile" accept="application/json" class="hidden"><span class="note" id="upNote">No ${kind} file loaded.</span></div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="upStart" disabled>Start ${kind}</button></div></div>`;
+  let loaded=null;
+  document.getElementById('upBtn').onclick=()=>document.getElementById('upFile').click();
+  document.getElementById('upFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(!j.questions||!j.questions.length)throw 0;loaded=j;ensureManifest(j.ch,j.area,j.title);if(j.concepts){Object.assign(CONCEPTS,j.concepts);persistBanks();}document.getElementById('upNote').textContent=`${j.questions.length} questions loaded.`;document.getElementById('upStart').disabled=false;}catch(err){alert("Invalid file — need { questions:[…] }.");}};r.readAsText(f);});
+  document.getElementById('upStart').onclick=()=>{if(!loaded)return;startSession({mode:kind,set:kind,ch:loaded.ch||0,questions:loaded.questions.slice(),timed:true,fixedTime:isMock?120*60:null});};
+}
+
+/* ---------- MISTAKES (Pool C) ---------- */
+function renderMistakes(m){
+  const c=computePoolC('all');
+  m.innerHTML=`<div class="ph"><div><h1>Mistakes — Pool C</h1><div class="sub">Wrong/guessed questions from practice and tests. Spaced repetition; kept off your performance graphs.</div></div></div>
+    <div class="strip" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat ${c.due?'bad':''}"><div class="k">Due today</div><div class="v">${c.due}</div></div>
+      <div class="stat warn"><div class="k">Graduating</div><div class="v">${c.graduating}</div></div>
+      <div class="stat bad"><div class="k">Repeat offenders</div><div class="v">${c.leeches}</div></div>
+      <div class="stat"><div class="k">Total</div><div class="v">${c.items.length}</div></div></div>
+    <div class="panel"><div class="row">
+      <div class="field"><label>Scope</label><select id="cScope"><option value="all">All chapters</option>${MANIFEST.map(x=>`<option value="${x.ch}">Ch ${x.ch}</option>`).join('')}</select></div>
+      <button class="btn" id="cStart" ${c.items.length?'':'disabled'}>Re-practise ${c.due||c.items.length} due</button>
+    </div>${c.items.length?'':'<p class="empty">No mistakes yet — Pool C fills as you miss or guess questions.</p>'}</div>
+    <div class="panel"><div class="sep">Stored mistakes — full question + every layer</div><div class="row"><div class="field"><label>Show</label><select id="mScope"><option value="all">All chapters</option>${MANIFEST.map(x=>`<option value="${x.ch}">Ch ${x.ch}</option>`).join('')}</select></div><span class="note" style="margin-left:8px">Saved automatically on every miss · keeps the whole question and all layers, even if you swap banks later.</span></div><div id="mistList"></div></div>`;
+  document.getElementById('cStart').onclick=()=>{const scope=document.getElementById('cScope').value;const cc=computePoolC(scope);const all=allQuestions();const qs=cc.items.filter(it=>it.due||cc.due===0).map(it=>all[it.qId]).filter(Boolean);const use=qs.length?qs:cc.items.map(it=>all[it.qId]).filter(Boolean);if(!use.length){alert("Nothing due in this scope.");return;}startSession({mode:'practice',set:'C',ch:use[0].ch,questions:use,timed:false,isC:true});};
+  const ms=document.getElementById('mScope');if(ms)ms.onchange=()=>renderMistList(ms.value);renderMistList('all');
+}
+
+/* ===================== POOL C derivation (all attempts) ===================== */
+function allQuestions(){const m={};Object.values(TEST_POOLS).forEach(p=>p.questions.forEach(q=>m[q.qId]=q));Object.values(PRACTICE).forEach(byS=>Object.values(byS).forEach(b=>{if(b)b.questions.forEach(q=>m[q.qId]=q);}));return m;}
+function computePoolC(scope){
+  const atts=getAttempts(); const hist={};
+  atts.forEach(a=>{(a.questions||[]).forEach(q=>{if(scope!=='all'&&a.ch!=scope)return;(hist[q.qId]=hist[q.qId]||[]).push({correct:q.correct,guessed:q.guessed,date:a.submittedAt||a.date,ch:a.ch});});});
+  const items=[];let due=0,graduating=0,leeches=0;const now=Date.now();
+  Object.keys(hist).forEach(qId=>{const h=hist[qId];let consec=0;for(let i=h.length-1;i>=0;i--){if(h[i].correct&&!h[i].guessed)consec++;else break;}
+    if(!h.some(x=>!x.correct||x.guessed))return; if(consec>=2)return;
+    const misses=h.filter(x=>!x.correct).length;const last=h[h.length-1];const interval=consec===1?3:1;
+    const nextDue=(Date.parse(last.date)||now)+interval*86400000;const isDue=now>=nextDue;
+    if(isDue)due++; if(consec===1)graduating++; if(misses>=3)leeches++;
+    items.push({qId,ch:last.ch,consec,misses,due:isDue});});
+  return {items,due,graduating,leeches};
+}
+
+/* ===================== SESSION / TEST ENGINE (reused, verified) ===================== */
+function startSession(o){
+  S.mode=o.mode;S.set=o.set;S.ch=o.ch;S.isC=!!o.isC;S.questions=o.questions;S.idx=0;
+  S.answers={};S.flags={};S.working={};S.struck={};S.scratch="";S.startedAt=Date.now();
+  if(o.mode==='stress') S.questions=S.questions.filter(q=>q.difficulty==='hard').concat(S.questions.filter(q=>q.difficulty!=='hard'));
+  const marks=S.questions.reduce((s,q)=>s+(q.marks||2),0);
+  S.timeLimit=o.timed?(o.fixedTime||marks*(MODE_SECS_PER_MARK[o.mode]||108)):0;
+  document.getElementById('app').style.display='none';
+  document.getElementById('exam').style.display='block';
+  document.getElementById('exTitle').textContent=titleFor();
+  startTimer();renderQ();autosave();
+}
+function titleFor(){const n={practice:'Practice',chtest:'Chapter test',multi:'Multi-chapter',stress:'Stress',mock:'Mock exam'}[S.mode]||'Test';return n+(S.isC?' · re-practice':(S.set?' · '+S.set:''));}
+function autosave(){if(!S.startedAt)return;save(K_IN,{mode:S.mode,set:S.set,ch:S.ch,isC:S.isC,idx:S.idx,answers:S.answers,flags:S.flags,working:S.working,struck:S.struck,scratch:S.scratch,startedAt:S.startedAt,timeLimit:S.timeLimit,questions:S.questions});}
+function resumeTest(){const ip=load(K_IN,null);if(!ip||!ip.questions||!ip.questions.length){alert("No saved test to resume.");return;}
+  S.mode=ip.mode;S.set=ip.set;S.ch=ip.ch;S.isC=ip.isC;S.questions=ip.questions;S.idx=ip.idx||0;S.answers=ip.answers||{};S.flags=ip.flags||{};S.working=ip.working||{};S.struck=ip.struck||{};S.scratch=ip.scratch||'';S.startedAt=ip.startedAt;S.timeLimit=ip.timeLimit;
+  document.getElementById('app').style.display='none';document.getElementById('exam').style.display='block';document.getElementById('exTitle').textContent=titleFor();startTimer();renderQ();}
+function startTimer(){if(S.timerId)clearInterval(S.timerId);const clk=document.getElementById('clock');clk.classList.remove('hidden');
+  S.timerId=setInterval(()=>{const el=Math.floor((Date.now()-S.startedAt)/1000);if(S.timeLimit){const rem=S.timeLimit-el;clk.textContent=fmt(Math.max(0,rem));clk.classList.toggle('low',rem<=120);if(rem<=0){clearInterval(S.timerId);finishTest();}}else clk.textContent=fmt(el);},1000);}
+function fmt(s){const m=Math.floor(s/60),x=s%60;return String(m).padStart(2,'0')+":"+String(x).padStart(2,'0');}
+function needsWorking(q){return q.type==='mtq'?(q.parts||[]).some(p=>p.kind==='numeric'):q.responseType==='number';}
+
+function renderQ(){
+  const q=S.questions[S.idx];const p=document.getElementById('qpanel');const fl=S.flags[q.qId];
+  let b=`<div class="qhead"><span>Question ${S.idx+1} of ${S.questions.length} · <span class="qsub">${esc(q.subTopic)}</span> · ${q.marks} mark${q.marks>1?'s':''}</span>
+    <button class="btn ghost sm" id="flagBtn">${fl?'⚑ Flagged':'⚐ Flag'}</button></div>`;
+  b+=`<div class="stem">${esc(q.stem||q.scenario)}</div>`;
+  b+=q.type==='ot'?renderOT(q):renderMTQ(q);
+  b+=`<div class="working"><label>Your working${needsWorking(q)?' (typed — used to pinpoint method slips)':' / notes (optional)'}</label><textarea id="workArea" placeholder="Show your steps…">${esc(S.working[q.qId]||'')}</textarea></div>`;
+  b+=`<div class="qnav"><button class="btn ghost" id="prevBtn" ${S.idx===0?'disabled':''}>← Prev</button><div class="navbtns">${S.idx<S.questions.length-1?'<button class="btn" id="nextBtn">Next →</button>':'<button class="btn warn" id="endBtn">Finish →</button>'}</div></div>`;
+  p.innerHTML=b;
+  document.getElementById('flagBtn').onclick=()=>{S.flags[q.qId]=!S.flags[q.qId];renderQ();renderNav();autosave();};
+  if(document.getElementById('prevBtn'))document.getElementById('prevBtn').onclick=()=>{S.idx--;renderQ();};
+  if(document.getElementById('nextBtn'))document.getElementById('nextBtn').onclick=()=>{S.idx++;renderQ();};
+  if(document.getElementById('endBtn'))document.getElementById('endBtn').onclick=trySubmit;
+  if(document.getElementById('workArea'))document.getElementById('workArea').addEventListener('input',e=>{S.working[q.qId]=e.target.value;autosave();});
+  wireInputs(q);renderNav();
+}
+function renderOT(q){
+  if(q.responseType==='mcq'||q.responseType==='multi'){const sel=S.answers[q.qId]||(q.responseType==='multi'?[]:null);
+    return `<div class="opts">`+q.options.map(o=>{const on=q.responseType==='multi'?(Array.isArray(sel)&&sel.includes(o.key)):(sel===o.key);const st=S.struck[q.qId+o.key];
+      return `<div class="opt ${on?'sel':''} ${st?'struck':''}" data-key="${o.key}"><span class="okey">${o.key}</span><span class="otext">${esc(o.text)}</span><button class="strike" data-strike="${o.key}">strike</button></div>`;}).join('')+`</div>`;}
+  if(q.responseType==='number'){const a=S.answers[q.qId]||{};let h=`<div class="numwrap"><input type="number" id="numIn" placeholder="${esc(q.number.unit||'')} value" value="${a.value!=null?a.value:''}"></div>`;
+    if(q.dropdowns)q.dropdowns.forEach(d=>{h+=`<div class="numwrap"><span class="note">${esc(d.label||'')}</span><select id="dd_${d.id}"><option value="">—</option>${d.options.map(o=>`<option ${a[d.id]===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;});return h;}
+  if(q.responseType==='dropdown')return q.dropdowns.map(d=>`<div class="numwrap"><span class="note">${esc(d.label||'')}</span><select id="dd_${d.id}"><option value="">—</option>${d.options.map(o=>`<option ${(S.answers[q.qId]||{})[d.id]===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`).join('');
+  return '';
+}
+function renderMTQ(q){const a=S.answers[q.qId]||{};return q.parts.map(pt=>{let inner='';
+  if(pt.kind==='numeric')inner=`<input type="number" id="p_${pt.partId}" value="${a[pt.partId]!=null?a[pt.partId]:''}">`;
+  else if(pt.kind==='dropdown')inner=`<select id="p_${pt.partId}"><option value="">—</option>${pt.options.map(o=>`<option ${a[pt.partId]===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  else inner=`<textarea id="p_${pt.partId}" placeholder="Your answer (self-marked at review)">${esc(a[pt.partId]||'')}</textarea>`;
+  return `<div style="margin:12px 0"><div style="font-weight:600;margin-bottom:6px">(${pt.partId}) ${esc(pt.prompt)} <span class="note">· ${pt.marks} mark${pt.marks>1?'s':''}</span></div>${inner}</div>`;}).join('');}
+function wireInputs(q){
+  if(q.type==='ot'&&(q.responseType==='mcq'||q.responseType==='multi')){
+    document.querySelectorAll('#qpanel .opt').forEach(el=>{el.onclick=(e)=>{if(e.target.dataset.strike!==undefined)return;const k=el.dataset.key;
+      if(q.responseType==='multi'){const arr=S.answers[q.qId]||[];const i=arr.indexOf(k);if(i>=0)arr.splice(i,1);else arr.push(k);S.answers[q.qId]=arr;}else S.answers[q.qId]=k;renderQ();renderNav();autosave();};});
+    document.querySelectorAll('#qpanel .strike').forEach(bn=>bn.onclick=(e)=>{e.stopPropagation();const k=bn.dataset.strike;S.struck[q.qId+k]=!S.struck[q.qId+k];renderQ();});}
+  if(q.type==='ot'&&q.responseType==='number'){const ni=document.getElementById('numIn');if(ni)ni.addEventListener('input',e=>{S.answers[q.qId]=Object.assign(S.answers[q.qId]||{},{value:e.target.value});autosave();});
+    if(q.dropdowns)q.dropdowns.forEach(d=>{const s=document.getElementById('dd_'+d.id);if(s)s.onchange=e=>{S.answers[q.qId]=Object.assign(S.answers[q.qId]||{},{[d.id]:e.target.value});renderNav();autosave();};});}
+  if(q.type==='ot'&&q.responseType==='dropdown')q.dropdowns.forEach(d=>{const s=document.getElementById('dd_'+d.id);if(s)s.onchange=e=>{S.answers[q.qId]=Object.assign(S.answers[q.qId]||{},{[d.id]:e.target.value});renderNav();autosave();};});
+  if(q.type==='mtq')q.parts.forEach(pt=>{const el=document.getElementById('p_'+pt.partId);if(el)el.addEventListener('input',e=>{S.answers[q.qId]=Object.assign(S.answers[q.qId]||{},{[pt.partId]:e.target.value});renderNav();autosave();});});
+}
+function isAnswered(q){const a=S.answers[q.qId];if(a==null)return false;if(q.type==='ot'){if(q.responseType==='multi')return Array.isArray(a)&&a.length>0;if(q.responseType==='mcq')return !!a;return a&&(a.value!=null&&a.value!==''||Object.keys(a).some(k=>a[k]));}return Object.keys(a||{}).length>0;}
+function renderNav(){const g=document.getElementById('navgrid');g.innerHTML=S.questions.map((q,i)=>{const c=['navg'];if(isAnswered(q))c.push('ans');if(S.flags[q.qId])c.push('flag');if(i===S.idx)c.push('cur');return `<button class="${c.join(' ')}" data-i="${i}">${i+1}${S.flags[q.qId]?'<span class="fdot">⚑</span>':''}</button>`;}).join('');
+  g.querySelectorAll('button').forEach(b=>b.onclick=()=>{S.idx=parseInt(b.dataset.i,10);renderQ();});}
+
+function trySubmit(){if(!S.timeLimit){finishTest();return;}
+  document.getElementById('presubGrid').innerHTML=S.questions.map((q,i)=>{const c=['ss'];if(isAnswered(q))c.push('ans');else c.push('blank');if(S.flags[q.qId])c.push('flag');return `<div class="${c.join(' ')}">${i+1}</div>`;}).join('');
+  const blanks=S.questions.filter(q=>!isAnswered(q)).length,fl=S.questions.filter(q=>S.flags[q.qId]).length;
+  document.getElementById('presubMsg').textContent=`${blanks} unanswered · ${fl} flagged. Submitting is final.`;
+  document.getElementById('exam').style.display='none';document.getElementById('presub').classList.remove('hidden');}
+
+function mark(q){
+  if(q.type==='ot'){
+    if(q.responseType==='mcq'){const a=S.answers[q.qId];const ok=a===correctKey(q);return {earned:ok?q.marks:0,correct:ok};}
+    if(q.responseType==='multi'){const a=(S.answers[q.qId]||[]).slice().sort();const cs=q.options.filter(o=>o.correct).map(o=>o.key).sort();const ex=JSON.stringify(a)===JSON.stringify(cs);return {earned:ex?q.marks:0,correct:ex};}
+    if(q.responseType==='number'){const a=S.answers[q.qId]||{};const v=parseFloat(a.value);let ok=!isNaN(v)&&Math.abs(round(v,q.number.roundingDp)-q.number.correctAnswer)<=(q.number.tolerance||0);if(q.dropdowns)q.dropdowns.forEach(d=>{if(a[d.id]!==d.correct)ok=false;});return {earned:ok?q.marks:0,correct:ok};}
+    if(q.responseType==='dropdown'){const a=S.answers[q.qId]||{};let ok=true;q.dropdowns.forEach(d=>{if(a[d.id]!==d.correct)ok=false;});return {earned:ok?q.marks:0,correct:ok};}
+  }
+  let earned=0,autoMax=0;const a=S.answers[q.qId]||{};
+  q.parts.forEach(pt=>{if(pt.kind==='numeric'){autoMax+=pt.marks;const v=parseFloat(a[pt.partId]);if(!isNaN(v)&&Math.abs(round(v,pt.roundingDp)-pt.correctAnswer)<=(pt.tolerance||0))earned+=pt.marks;}else if(pt.kind==='dropdown'){autoMax+=pt.marks;if(a[pt.partId]===pt.correct)earned+=pt.marks;}});
+  return {earned,correct:earned===autoMax,mtq:true};
+}
+function correctKey(q){const o=q.options.find(x=>x.correct);return o?o.key:null;}
+function round(v,dp){if(dp==null)return v;const f=Math.pow(10,dp);return Math.round(v*f)/f;}
+function answerKeyFor(q){if(q.type==='ot'){if(q.responseType==='mcq'||q.responseType==='multi')return q.options.filter(o=>o.correct).map(o=>o.key).join(',');if(q.responseType==='number'){let s=q.number.correctAnswer+'';if(q.dropdowns)s+=' '+q.dropdowns.map(d=>d.correct).join('/');return s;}if(q.responseType==='dropdown')return q.dropdowns.map(d=>d.correct).join('/');}return (q.parts||[]).map(p=>p.partId+":"+(p.correctAnswer!=null?p.correctAnswer:(p.correct||'narrative'))).join(' · ');}
+
+function finishTest(){
+  if(S.timerId)clearInterval(S.timerId);
+  const qrecs=[];let total=0,possible=0,secA=0,secB=0;
+  S.questions.forEach(q=>{const m=mark(q);total+=m.earned;possible+=q.marks;if(q.type==='mtq')secB+=m.earned;else secA+=m.earned;
+    const rec={qId:q.qId,conceptRef:q.conceptRef,subTopic:q.subTopic,difficulty:q.difficulty,type:q.type,responseType:q.responseType||null,marks:q.marks,
+      userAnswer:S.answers[q.qId]==null?null:S.answers[q.qId],correctAnswer:answerKeyFor(q),correct:m.correct,earned:m.earned,guessed:false,timeSpentSeconds:null,
+      working:S.working[q.qId]||'',postMortemTag:null,aiSlipSuggestion:null,selfMarked:q.type==='mtq'&&(q.parts||[]).some(p=>p.kind==='narrative'),isVariant:false};qrecs.push(rec);if(!m.correct&&!q.isVariant)upsertMistake(q,rec);});
+  const now=new Date();
+  const attempt={_id:"MA-"+now.toISOString().replace(/[-:T.Z]/g,'').slice(0,14)+"-"+S.ch+S.set,schemaVersion:"1.0",subject:"MA",ch:S.ch,
+    area:(MANIFEST.find(m=>m.ch===S.ch)||{}).area||"",set:S.set,mode:S.mode,rePractice:S.isC,
+    date:now.toISOString().slice(0,10),startedAt:new Date(S.startedAt).toISOString(),submittedAt:now.toISOString(),
+    elapsedSeconds:Math.floor((Date.now()-S.startedAt)/1000),totalScore:total,totalPossible:possible,sectionAScore:secA,sectionBScore:secB,questions:qrecs};
+  const a=getAttempts();a.push(attempt);save(K_ATT,a);
+  localStorage.removeItem(K_IN);
+  LAST_SYNCED=false; syncToDashboard();
+  document.getElementById('exam').style.display='none';document.getElementById('presub').classList.add('hidden');
+  renderReview(attempt);
+}
+function syncToDashboard(){const a=getAttempts();const at=a[a.length-1];if(!at)return false;
+  const qz=load(K_QUEUE,[]);if(!qz.some(x=>x._id===at._id)){qz.push(at);save(K_QUEUE,qz);}
+  if(FIREBASE_CONFIG){try{}catch(e){const oq=load('ma_fb_queue',[]);oq.push(at);save('ma_fb_queue',oq);}}
+  LAST_SYNCED=true;return true;
+}
+
+/* ===================== REVIEW ===================== */
+function renderReview(at){
+  const reviewEl=document.getElementById('review');reviewEl.classList.remove('hidden');reviewEl.style.display='block';
+  try{
+  const pct=at.totalPossible?Math.round(100*at.totalScore/at.totalPossible):0;
+  document.getElementById('revTitle').textContent=titleFor();
+  document.getElementById('revScore').textContent=at.totalScore+"/"+at.totalPossible;
+  const v=document.getElementById('revVerdict');v.textContent=(pct>=50?'PASS ':'BELOW ')+pct+'%';v.className=pct>=50?'pass':'fail';
+  const body=document.getElementById('revBody');body.innerHTML='';
+  const by={};(at.questions||[]).forEach(q=>{const k=q.subTopic||'?';(by[k]=by[k]||{w:0,t:0});by[k].t++;if(!q.correct)by[k].w++;});
+  const weak=Object.keys(by).filter(k=>by[k].w>0).map(k=>({topic:k,w:by[k].w,t:by[k].t}));
+  const right=at.questions.filter(q=>q.correct).length, wrong=at.questions.length-right;
+  const sum=document.createElement('div');sum.className='panel';
+  sum.innerHTML=`<div class="sep">Result — this sitting</div>
+    <div class="strip" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+      <div class="stat"><div class="k">Score</div><div class="v ${pct>=50?'':'bad'}">${at.totalScore}<small>/${at.totalPossible}</small></div></div>
+      <div class="stat good"><div class="k">Correct</div><div class="v">${right}</div></div>
+      <div class="stat bad"><div class="k">Wrong</div><div class="v">${wrong}</div></div>
+      <div class="stat ${pct>=50?'good':'bad'}"><div class="k">Result</div><div class="v">${pct}<small>%</small></div></div></div>
+    <div class="sep">Weak areas this sitting</div>
+    ${weak.length?`<table class="dt"><tr><th>Sub-topic</th><th>Missed</th></tr>${weak.map(w=>`<tr><td>${esc(w.topic)}</td><td class="mono fail">${w.w}/${w.t}</td></tr>`).join('')}</table>`:'<div class="empty">Nothing missed — clean sweep.</div>'}
+    <div class="row" style="margin-top:14px"><button class="btn" id="syncBtn">${LAST_SYNCED?'Re-sync to dashboard':'Sync to dashboard'}</button><span class="note" id="syncMsg" style="${LAST_SYNCED?'color:var(--good)':''}">${LAST_SYNCED?'Auto-synced to the dashboard ✓':'Saved locally. Click to push to the main dashboard.'}</span></div>`;
+  body.appendChild(sum);
+  sum.querySelector('#syncBtn').onclick=()=>{const ok=syncToDashboard();const msg=sum.querySelector('#syncMsg');if(ok){msg.textContent="Synced to dashboard ✓";msg.style.color="var(--good)";sum.querySelector('#syncBtn').textContent="Synced ✓";}};
+  S.questions.forEach((q,i)=>{try{body.appendChild(reviewCard(q,i,at));}catch(cardErr){const d=document.createElement('div');d.className='revq';d.style.cssText='border:1px solid #c0392b;color:#c0392b;padding:14px;margin-bottom:10px';d.textContent='⚠ Could not render Q'+(i+1)+' ('+((q&&q.qId)||'?')+'): '+((cardErr&&cardErr.message)||cardErr);body.appendChild(d);}});
+  }catch(err){
+    const rb=document.getElementById('revBody')||reviewEl;
+    if(rb)rb.innerHTML='<div style="padding:24px;color:#c0392b"><h3>The result screen hit an error</h3><pre style="white-space:pre-wrap;font-size:13px">'+esc(String((err&&err.stack)||err))+'</pre></div>';
+    reviewEl.style.display='block';
+  }
+}
+function reviewCard(q,i,at){
+  const rec=at.questions.find(r=>r.qId===q.qId);const concept=CONCEPTS[q.conceptRef]||{};
+  const wrap=document.createElement('div');wrap.className='revq';
+  let h=`<div class="qh"><div><b>Q${i+1}</b> ${esc(q.subTopic)}</div><span class="qmark ${rec.correct?'ok':'no'}">${rec.correct?'✓ ':'✗ '}${rec.earned}/${q.marks}</span></div>`;
+  h+=`<div class="stem" style="font-size:15.5px">${esc(q.stem||q.scenario)}</div>`;
+  if(q.type==='ot'&&(q.responseType==='mcq'||q.responseType==='multi')){const user=q.responseType==='multi'?(rec.userAnswer||[]):[rec.userAnswer];
+    h+=q.options.map(o=>{const isC=o.correct,isU=user.includes(o.key);const cls=isC?'ropt correct':(isU?'ropt your':'ropt');const tag=isC?'<span class="tag c">✓ correct</span>':(isU?'<span class="tag y">✗ your pick</span>':'');return `<div class="${cls}"><b>${o.key}.</b> ${esc(o.text)} ${tag}<div class="reason">${esc(o.reasoning)}</div></div>`;}).join('');
+  }else if(q.type==='ot'){h+=`<div class="ropt ${rec.correct?'correct':'your'}">Your answer: <b>${esc(fmtUser(rec.userAnswer))}</b> · Correct: <b>${esc(rec.correctAnswer)}</b></div>`;
+  }else{h+=q.parts.map(pt=>{const ua=(rec.userAnswer||{})[pt.partId];
+    if(pt.kind==='narrative')return `<div class="ropt"><b>(${pt.partId})</b> ${esc(pt.prompt)}<div class="reason"><b>Your answer:</b> ${esc(ua||'—')}</div><div class="reason"><b>Model:</b> ${esc(pt.modelAnswer)}</div><div class="selfmark" data-q="${q.qId}" data-p="${pt.partId}" data-m="${pt.marks}"><button data-v="full">Full (${pt.marks})</button><button data-v="partial">Partial</button><button data-v="none">None</button></div></div>`;
+    const ok=pt.kind==='numeric'?(!isNaN(parseFloat(ua))&&Math.abs(round(parseFloat(ua),pt.roundingDp)-pt.correctAnswer)<=(pt.tolerance||0)):(ua===pt.correct);
+    return `<div class="ropt ${ok?'correct':'your'}"><b>(${pt.partId})</b> ${esc(pt.prompt)}<div class="reason">Your answer: <b>${esc(ua||'—')}</b> · Correct: <b>${esc(pt.correctAnswer!=null?pt.correctAnswer:pt.correct)}</b></div></div>`;}).join('');}
+  if(needsWorking(q)){h+=`<div class="workdiff"><div class="box"><h4>Your working</h4><pre>${esc(rec.working||'(none)')}</pre></div><div class="box"><h4>Model working</h4><pre>${esc(q.layers.L2_working)}</pre></div></div><div class="aislip">AI slip suggestion: enable an analysis agent to compare your working to the model and flag the likely method slip here.</div>`;}
+  h+=`<div class="layers"><button class="btn ghost sm revealall">Reveal all layers</button>`;
+  const L=[['L0 · Story',concept.L0_story,''],['L1 · Concept',concept.L1_concept,''],['L2 · Working',q.layers.L2_working,'code'],['L3 · Standard / IFRS',concept.L3_standard,''],['L5 · Examiner note',q.layers.L5_examiner,'tip'],['L6 · Advanced',q.layers.L6_advanced,'']];
+  L.forEach((l,li)=>{if(!l[1])return;h+=`<div class="layer"><div class="lh" data-li="${li}"><span class="ar">▶</span> ${l[0]}</div><div class="lb ${l[2]} hidden">${esc(l[1])}</div></div>`;});
+  if(concept.sourcePointer)h+=`<div class="note" style="margin-top:8px">📖 Read the exact text: ${esc(concept.sourcePointer)}</div>`;
+  if(q.layers.teacher)h+=`<div class="teacher"><h4>Teacher commentary</h4>${esc(q.layers.teacher)}</div>`;
+  h+=`</div>`;
+  if(!rec.correct)h+=`<div class="pm"><label>Why did you miss this?</label><div class="pmopts" data-q="${q.qId}">${['careless','method','didnt_know','time'].map(t=>`<button data-v="${t}">${t.replace('didnt_know','didn’t know')}</button>`).join('')}</div></div>`;
+  wrap.innerHTML=h;
+  wrap.querySelectorAll('.layer .lh').forEach(lh=>lh.onclick=()=>{const lb=lh.nextElementSibling;lb.classList.toggle('hidden');lh.querySelector('.ar').textContent=lb.classList.contains('hidden')?'▶':'▼';});
+  wrap.querySelector('.revealall').onclick=()=>{wrap.querySelectorAll('.layer .lb').forEach(lb=>lb.classList.remove('hidden'));wrap.querySelectorAll('.layer .ar').forEach(a=>a.textContent='▼');};
+  const pm=wrap.querySelector('.pmopts');if(pm)pm.querySelectorAll('button').forEach(b=>b.onclick=()=>{pm.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');setPM(q.qId,b.dataset.v);});
+  wrap.querySelectorAll('.selfmark').forEach(sm=>sm.querySelectorAll('button').forEach(b=>b.onclick=()=>{sm.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');applySelfMark(q.qId,sm.dataset.p,parseInt(sm.dataset.m,10),b.dataset.v);}));
+  return wrap;
+}
+function fmtUser(u){if(u==null)return '—';if(typeof u==='object')return Object.values(u).join(' ');return u;}
+function setPM(qId,tag){const a=getAttempts();const at=a[a.length-1];if(!at)return;const r=at.questions.find(x=>x.qId===qId);if(r){r.postMortemTag=tag;save(K_ATT,a);}}
+function applySelfMark(qId,part,marks,v){const a=getAttempts();const at=a[a.length-1];if(!at)return;const r=at.questions.find(x=>x.qId===qId);if(!r)return;const add=v==='full'?marks:(v==='partial'?Math.floor(marks/2):0);r._selfParts=r._selfParts||{};const prev=r._selfParts[part]||0;r._selfParts[part]=add;r.earned+=(add-prev);at.totalScore+=(add-prev);at.sectionBScore+=(add-prev);r.correct=r.earned===r.marks;save(K_ATT,a);document.getElementById('revScore').textContent=at.totalScore+"/"+at.totalPossible;}
+
+function getMistakes(){return load(K_MIST,{});}
+function saveMistakes(o){save(K_MIST,o);}
+function upsertMistake(q,rec){if(!q||q.isVariant)return;const store=getMistakes();const now=new Date().toISOString();const concept=(typeof CONCEPTS!=='undefined'&&CONCEPTS[q.conceptRef])||q.concept||{};const e=store[q.qId]||{qId:q.qId,firstMissed:now,misses:0};e.q=q;e.concept=concept;e.ch=q.ch||S.ch;e.subTopic=q.subTopic;e.difficulty=q.difficulty;e.rec={userAnswer:rec.userAnswer,correctAnswer:rec.correctAnswer,working:rec.working,correct:rec.correct,earned:rec.earned,marks:rec.marks};e.lastMissed=now;e.misses=(e.misses||0)+1;store[q.qId]=e;saveMistakes(store);}
+function fmtMistDate(d){try{return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});}catch(e){return '';}}
+function mistakeCard(entry){
+  const q=entry.q||{},rec=entry.rec||{},concept=entry.concept||{};const ql=q.layers||{};
+  const wrap=document.createElement('div');wrap.className='revq';
+  let h=`<div class="qh"><div><b>Ch${q.ch||entry.ch||''}</b> · ${esc(q.subTopic||entry.subTopic||'')}</div><span class="qmark no">✗ missed ×${entry.misses||1}</span></div>`;
+  h+=`<div class="stem" style="font-size:15.5px">${esc(q.stem||q.scenario||'')}</div>`;
+  if(q.type==='ot'&&(q.responseType==='mcq'||q.responseType==='multi')){const user=q.responseType==='multi'?(rec.userAnswer||[]):[rec.userAnswer];
+    h+=(q.options||[]).map(o=>{const isC=o.correct,isU=user.includes(o.key);const cls=isC?'ropt correct':(isU?'ropt your':'ropt');const tag=isC?'<span class="tag c">✓ correct</span>':(isU?'<span class="tag y">✗ your pick</span>':'');return `<div class="${cls}"><b>${o.key}.</b> ${esc(o.text)} ${tag}<div class="reason">${esc(o.reasoning||'')}</div></div>`;}).join('');
+  }else if(q.type==='ot'){h+=`<div class="ropt ${rec.correct?'correct':'your'}">Your answer: <b>${esc(fmtUser(rec.userAnswer))}</b> · Correct: <b>${esc(rec.correctAnswer||'')}</b></div>`;
+  }else if(q.parts){h+=q.parts.map(pt=>{const ua=(rec.userAnswer||{})[pt.partId];return `<div class="ropt"><b>(${pt.partId})</b> ${esc(pt.prompt)}<div class="reason"><b>Your answer:</b> ${esc(fmtUser(ua))}</div><div class="reason"><b>Model:</b> ${esc(pt.modelAnswer!=null?pt.modelAnswer:(pt.correctAnswer!=null?pt.correctAnswer:pt.correct))}</div></div>`;}).join('');}
+  if(needsWorking(q)&&ql.L2_working){h+=`<div class="workdiff"><div class="box"><h4>Your working</h4><pre>${esc(rec.working||'(none)')}</pre></div><div class="box"><h4>Model working</h4><pre>${esc(ql.L2_working)}</pre></div></div>`;}
+  h+=`<div class="layers"><button class="btn ghost sm revealall">Reveal all layers</button>`;
+  const L=[['L0 · Story',concept.L0_story,''],['L1 · Concept',concept.L1_concept,''],['L2 · Working',ql.L2_working,'code'],['L3 · Standard / IFRS',concept.L3_standard,''],['L5 · Examiner note',ql.L5_examiner,'tip'],['L6 · Advanced',ql.L6_advanced,'']];
+  L.forEach((l,li)=>{if(!l[1])return;h+=`<div class="layer"><div class="lh" data-li="${li}"><span class="ar">▶</span> ${l[0]}</div><div class="lb ${l[2]} hidden">${esc(l[1])}</div></div>`;});
+  if(concept.sourcePointer)h+=`<div class="note" style="margin-top:8px">📖 Read the exact text: ${esc(concept.sourcePointer)}</div>`;
+  if(ql.teacher)h+=`<div class="teacher"><h4>Teacher commentary</h4>${esc(ql.teacher)}</div>`;
+  h+=`</div>`;
+  wrap.innerHTML=h;
+  wrap.querySelectorAll('.layer .lh').forEach(lh=>lh.onclick=()=>{const lb=lh.nextElementSibling;lb.classList.toggle('hidden');lh.querySelector('.ar').textContent=lb.classList.contains('hidden')?'▶':'▼';});
+  wrap.querySelector('.revealall').onclick=()=>{wrap.querySelectorAll('.layer .lb').forEach(lb=>lb.classList.remove('hidden'));wrap.querySelectorAll('.layer .ar').forEach(a=>a.textContent='▼');};
+  return wrap;
+}
+function renderMistList(scope){const box=document.getElementById('mistList');if(!box)return;const store=getMistakes();let entries=Object.values(store).filter(e=>scope==='all'||String(e.ch)===String(scope));entries.sort((a,b)=>(b.lastMissed||'').localeCompare(a.lastMissed||''));if(!entries.length){box.innerHTML='<p class="empty">No stored mistakes yet — they save automatically when you miss a question, with the full question and every layer.</p>';return;}box.innerHTML='';entries.forEach(e=>{const row=document.createElement('div');row.style.borderBottom='1px solid var(--line)';const head=document.createElement('div');head.style.cssText='cursor:pointer;padding:11px 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap';head.innerHTML=`<span class="ar">▶</span><b>Ch${e.ch}</b> · ${esc(e.subTopic||'')} <span style="color:var(--muted);font-size:12.5px">${esc(e.difficulty||'')} · missed ×${e.misses} · last ${fmtMistDate(e.lastMissed)}</span>`;const body=document.createElement('div');body.className='hidden';head.onclick=()=>{const open=!body.classList.contains('hidden');if(open){body.classList.add('hidden');head.querySelector('.ar').textContent='▶';}else{if(!body.dataset.built){body.appendChild(mistakeCard(e));body.dataset.built='1';}body.classList.remove('hidden');head.querySelector('.ar').textContent='▼';}};row.appendChild(head);row.appendChild(body);box.appendChild(row);});}
+
+/* ===================== CALC ===================== */
+let C={cur:'0',prev:null,op:null,mem:0,fresh:true};
+function initCalc(){document.querySelectorAll('#calc .ckeys button').forEach(b=>b.onclick=()=>calcKey(b.dataset.k));cdisp();}
+function cdisp(){document.getElementById('cdisp').textContent=C.cur;}
+function calcKey(k){
+  if(/[0-9]/.test(k)){C.cur=(C.fresh||C.cur==='0')?k:C.cur+k;C.fresh=false;}
+  else if(k==='.'){if(!C.cur.includes('.')){C.cur=C.fresh?'0.':C.cur+'.';C.fresh=false;}}
+  else if(k==='C')C={cur:'0',prev:null,op:null,mem:C.mem,fresh:true};
+  else if(k==='±')C.cur=(parseFloat(C.cur)*-1)+'';
+  else if(k==='%')C.cur=(parseFloat(C.cur)/100)+'';
+  else if(k==='√'){const v=parseFloat(C.cur);C.cur=(v>=0?Math.sqrt(v):NaN)+'';C.fresh=true;}
+  else if(k==='MC')C.mem=0; else if(k==='MR'){C.cur=C.mem+'';C.fresh=true;}
+  else if(k==='M+'){C.mem+=parseFloat(C.cur)||0;C.fresh=true;} else if(k==='M-'){C.mem-=parseFloat(C.cur)||0;C.fresh=true;}
+  else if(['+','-','×','÷'].includes(k)){if(C.op&&!C.fresh)compute();C.prev=parseFloat(C.cur);C.op=k;C.fresh=true;}
+  else if(k==='='){compute();C.op=null;}
+  cdisp();
+}
+function compute(){if(C.op==null||C.prev==null)return;const a=C.prev,b=parseFloat(C.cur);let r=b;if(C.op==='+')r=a+b;else if(C.op==='-')r=a-b;else if(C.op==='×')r=a*b;else if(C.op==='÷')r=b!==0?a/b:NaN;C.cur=(Math.round(r*1e8)/1e8)+'';C.prev=null;C.fresh=true;}
+
+/* ===================== UTIL ===================== */
+function toggle(id){document.getElementById(id).classList.toggle('hidden');}
+function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function importJSON(e,kind,src,cb){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);
+  if(kind==='practice'){if(!j.questions||j.ch==null)throw 0;PRACTICE[j.ch]=PRACTICE[j.ch]||{};PRACTICE[j.ch][src]={ch:j.ch,area:j.area,source:src,questions:j.questions};if(j.concepts)Object.assign(CONCEPTS,j.concepts);persistBanks();ensureManifest(j.ch,j.area,j.title);fillChapterSelect('pCh',parseInt(j.ch,10));alert("Imported "+j.questions.length+" "+src+" questions for Ch "+j.ch+".");if(cb)cb();}
+}catch(err){alert("Invalid JSON (need ch + questions[]).");}};r.readAsText(f);}
+
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
