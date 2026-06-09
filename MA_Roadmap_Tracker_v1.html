@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MA Roadmap Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--navy:#0b2349;--navy2:#16356f;--gold:#c8a24e;--gold2:#e0c074;--ink:#1f2937;--mut:#6b7280;--line:#e2e8f0;--bg:#f4f6f9;--ok:#0f766e;--warn:#b45309;--bad:#b91c1c;--card:#fff;}
+*{box-sizing:border-box}
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:14px;line-height:1.45}
+.mono{font-family:'IBM Plex Mono',monospace;font-feature-settings:"zero" 0}
+.dayh .pct{font-feature-settings:"zero" 0}
+header{background:linear-gradient(120deg,var(--navy),var(--navy2));color:#fff;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;font-weight:600;letter-spacing:.2px}
+header .sub{font-size:12px;opacity:.8}
+.badge{margin-left:auto;background:linear-gradient(120deg,var(--gold),var(--gold2));color:#1a1300;border-radius:8px;padding:6px 12px;font-weight:700;text-align:center;line-height:1.1}
+.badge .n{font-size:20px;display:block}.badge .l{font-size:9px;text-transform:uppercase;letter-spacing:1px}
+nav.tabs{background:#fff;border-bottom:1px solid var(--line);display:flex;gap:4px;padding:0 14px;position:sticky;top:0;z-index:5}
+nav.tabs button{background:none;border:none;padding:12px 16px;font-size:14px;font-weight:600;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}
+nav.tabs button.active{color:var(--navy);border-bottom-color:var(--gold)}
+main{max-width:1080px;margin:0 auto;padding:18px 16px 60px}
+section.tab{display:none}section.tab.active{display:block}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+select,input[type=date],input[type=number],input[type=text]{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+.btn{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:9px 15px;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px}
+.btn.gold{background:linear-gradient(120deg,var(--gold),var(--gold2));color:#1a1300}
+.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.btn:active{transform:translateY(1px)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px}
+.stat .v{font-size:30px;font-weight:600;font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--navy);letter-spacing:-.5px;line-height:1;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:.46em;font-weight:500;color:var(--mut);letter-spacing:0;margin-left:2px;vertical-align:.35em}
+.stat .k{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:1.3px;margin-top:9px;font-weight:600}
+.stat .s{font-size:11px;color:#94a3b8;margin-top:3px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0}
+.panel h2{font-size:15px;margin:0 0 10px;color:var(--navy)}
+.bar{height:12px;background:#eef1f5;border-radius:6px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),#34d399);border-radius:6px}
+.donuts{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:520px;margin:6px auto 0}
+.donuts canvas{max-height:158px}
+.dlabel{text-align:center;font-weight:600;color:var(--mut);margin-top:12px;font-size:10.5px;text-transform:uppercase;letter-spacing:1px}
+.dayc{border:1px solid var(--line);border-radius:11px;margin-bottom:11px;overflow:hidden}
+.dayc.done{border-color:#6ee7b7}
+.dayh{background:#f0f4f9;padding:9px 13px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.dayh.lite{background:#ecfdf5}.dayh.mock{background:#fff7ed}
+.dayh .d{font-weight:700;color:var(--navy)}
+.dayh .tag{font-size:11px;background:var(--navy);color:#fff;border-radius:10px;padding:2px 9px}
+.dayh .pct{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut)}
+.dayb{padding:10px 13px}
+.task{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed #eef1f5}
+.task:last-of-type{border-bottom:none}
+.task input{margin-top:2px;width:17px;height:17px;accent-color:var(--ok);cursor:pointer;flex:none}
+.task .lab{flex:1}
+.task .ic{font-weight:700;color:var(--ok);font-size:12px;margin-right:4px}
+.task.done .lab{color:var(--mut);text-decoration:line-through}
+.task.test .ic{color:var(--warn)}
+.task.ctest .ic{color:#7c3aed}
+.task.ctest{background:#faf8ff}
+.task.watch .ic{color:#0f766e}
+.watchnote{color:var(--mut);font-size:12.5px;padding:6px 2px}
+.watchnote .ic{color:#94a3b8;margin-right:2px}
+.v4{font-size:10px;padding:1px 7px;border-radius:8px;margin-left:6px;font-weight:700;white-space:nowrap}
+.v4.pass{background:#d1fae5;color:#065f46} .v4.fail{background:#fee2e2;color:#991b1b}
+.synced{font-size:11px;color:#0f766e;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:7px;padding:6px 10px;margin:4px 0 10px}
+.note{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-family:inherit;font-size:13px;resize:vertical;min-height:34px}
+.rev{display:flex;gap:9px;align-items:center;padding:7px 10px;border:1px solid var(--line);border-radius:9px;margin-bottom:7px;background:#fbfcfe}
+.rev.overdue{border-color:#fca5a5;background:#fef4f4}
+.rev .due{margin-left:auto;font-size:11px;color:var(--mut);font-family:'IBM Plex Mono',monospace}
+.rev.overdue .due{color:var(--bad);font-weight:700}
+.rev input{width:17px;height:17px;accent-color:var(--ok);cursor:pointer}
+.empty{color:var(--mut);font-style:italic;padding:6px 0}
+.pill{font-size:10px;padding:1px 8px;border-radius:9px;font-weight:700}
+.pill.todo{background:#fef3c7;color:#92400e}.pill.done{background:#d1fae5;color:#065f46}
+.goal{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:9px;padding:9px 12px;margin-top:6px;font-size:13px}
+.goal b{color:#047857}
+.tools-pane{display:none}.tools-pane.active{display:block}
+.help{font-size:12px;color:var(--mut);margin:6px 0}
+textarea#importBox{width:100%;min-height:150px;border:1px solid var(--line);border-radius:9px;padding:11px;font-family:'IBM Plex Mono',monospace;font-size:12px}
+.kv{display:grid;grid-template-columns:160px 1fr;gap:9px;align-items:center;max-width:460px}
+.kv label{font-size:13px;color:var(--mut)}
+.msg{padding:9px 12px;border-radius:8px;margin:10px 0;font-size:13px;display:none}
+.msg.ok{background:#d1fae5;color:#065f46;display:block}.msg.err{background:#fee2e2;color:#991b1b;display:block}
+.foot{color:#9aa4b2;font-size:11px;text-align:center;margin-top:24px}
+.pace{border-radius:10px;padding:11px 14px;margin:0 0 14px;font-size:13.5px;font-weight:600;border:1px solid}
+.pace.ok{background:#ecfdf5;border-color:#6ee7b7;color:#047857}
+.pace.warn{background:#fff7ed;border-color:#fed7aa;color:#b45309}
+.pace.bad{background:#fef2f2;border-color:#fca5a5;color:#b91c1c}
+.pace .sub{display:block;font-weight:500;color:var(--mut);font-size:12px;margin-top:3px}
+.todaywrap{margin:0 0 14px}
+.todaywrap .th{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;display:flex;align-items:center;gap:8px}
+.todaywrap .th .dt{color:var(--mut);font-weight:600;letter-spacing:0;text-transform:none;font-size:12px}
+.dayc.today{border:2px solid var(--gold);box-shadow:0 1px 10px rgba(200,162,78,.2)}
+.today-pill{background:var(--gold);color:#1a1300;font-size:9px;font-weight:800;padding:1px 7px;border-radius:9px;letter-spacing:.5px}
+.savewarn{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;border-radius:8px;padding:9px 12px;margin:0 0 12px;font-size:13px;font-weight:600;display:none}
+.savewarn.show{display:block}.savewarn a{color:#b91c1c}
+.legendrow{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--mut);margin:2px 0 14px}
+.tdot{display:inline-block;width:11px;height:11px;border-radius:50%;flex:none;margin-top:5px}
+.tdot.crit{background:#b91c1c}.tdot.high{background:#ea7317}.tdot.med{background:#ca8a04}.tdot.low{background:#64748b}
+.trow{display:flex;align-items:flex-start;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.trow:last-child{border-bottom:none}
+.tinfo{flex:1;min-width:0}
+.tname{font-weight:600;font-size:13px;margin-bottom:6px}
+.tname .sub{color:var(--mut);font-weight:500;font-size:11px}
+.tbar{height:9px;background:#eef1f5;border-radius:5px;overflow:hidden}
+.tbar>i{display:block;height:100%;background:linear-gradient(90deg,#c8a24e,#e0c074);border-radius:5px}
+.tbar>i.full{background:linear-gradient(90deg,#0f766e,#34d399)}
+.tcount{font-family:'IBM Plex Sans',sans-serif;font-size:13px;color:var(--navy);font-weight:600;min-width:46px;text-align:right;margin-top:1px;font-variant-numeric:tabular-nums}
+#printReport{display:none}
+@media print{
+ @page{size:A4;margin:14mm}
+ body.print-mode .app{display:none}
+ body.print-mode #printReport{display:block}
+ #printReport h2{color:#0b2349}
+ #printReport table{width:100%;border-collapse:collapse;font-size:12px}
+ #printReport th,#printReport td{border:1px solid #cbd5e1;padding:5px 7px;text-align:left;vertical-align:top}
+ #printReport th{background:#0b2349;color:#fff}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div><h1>MA Roadmap Tracker</h1><div class="sub">ACCA Management Accounting (MA / FMA) · Strategy D · tick as you go</div></div>
+  <div class="badge"><span class="n mono" id="countN">–</span><span class="l">days to exam</span></div>
+</header>
+<nav class="tabs">
+  <button id="t-overview" class="active" onclick="showTab('overview')">📊 Overview</button>
+  <button id="t-weekly" onclick="showTab('weekly')">🗓️ Weekly</button>
+  <button id="t-topics" onclick="showTab('topics')">📚 Topics</button>
+  <button id="t-tools" onclick="showTab('tools')">🛠️ Tools</button>
+</nav>
+<main>
+  <!-- OVERVIEW -->
+  <section id="tab-overview" class="tab active">
+    <div class="savewarn" id="saveWarn">⚠ Couldn’t save your progress (browser storage is blocked or full). <a href="#" onclick="exportBackup();return false;">Download a backup now</a>.</div>
+    <div id="paceBanner"></div>
+    <div class="row">
+      <strong>Progress:</strong>
+      <select id="ovScope" onchange="render()">
+        <option value="week">This week</option>
+        <option value="all">Whole plan</option>
+      </select>
+      <select id="ovWeek" onchange="render()"></select>
+    </div>
+    <div class="cards" id="ovCards"></div>
+    <div class="panel"><h2>Completion</h2>
+      <div class="donuts">
+        <div><canvas id="dWeek"></canvas><div class="dlabel" id="dWeekLab">This week</div></div>
+        <div><canvas id="dAll"></canvas><div class="dlabel">Whole plan</div></div>
+      </div>
+      <div id="donutFallback" class="help"></div>
+    </div>
+    <div class="panel"><h2>Progress by week</h2><canvas id="ovChart" height="110"></canvas><div id="ovChartFallback" class="help"></div></div>
+    <div class="panel"><h2>🔁 Revise today <span class="help" id="revCount"></span></h2><div id="ovRev"></div></div>
+  </section>
+  <!-- WEEKLY -->
+  <section id="tab-weekly" class="tab">
+    <div class="row">
+      <strong>Week:</strong>
+      <select id="wkSelect" onchange="render()"></select>
+      <button class="btn ghost" onclick="jumpToday()">📍 Today</button>
+      <span class="spacer"></span>
+      <button class="btn gold" onclick="downloadWeekPDF()">⬇️ Download this week (PDF)</button>
+    </div>
+    <div id="wkRevToday"></div>
+    <div id="wkBody"></div>
+    <div class="goal" id="wkGoal"></div>
+  </section>
+  <!-- TOPICS -->
+  <section id="tab-topics" class="tab">
+    <div class="row"><strong>📚 Lecture progress by Mirchawala topic</strong></div>
+    <div class="legendrow"><span>🔴 Critical</span><span>🟠 High</span><span>🟡 Medium</span><span>🔵 Low</span></div>
+    <div class="cards" id="topicsSummary"></div>
+    <div class="panel"><div id="topicsBody"></div></div>
+  </section>
+  <!-- TOOLS -->
+  <section id="tab-tools" class="tab">
+    <div class="row"><strong>Tool:</strong>
+      <select id="toolSelect" onchange="showTool()">
+        <option value="update">⬆️ Update / Import plan</option>
+        <option value="settings">⚙️ Settings</option>
+        <option value="progress">📈 Progress charts</option>
+      </select>
+    </div>
+    <div id="pane-update" class="tools-pane active">
+      <div class="panel">
+        <h2>Load an updated plan from Claude</h2>
+        <p class="help">Weekend flow: <b>Download this week (PDF)</b> from the Weekly tab → upload it to claude.ai → Claude rolls over what you missed, re-paces (and adjusts for a job if you noted one) → paste the JSON it returns below → <b>Load</b>. Your ticks for unchanged days are kept.</p>
+        <textarea id="importBox" placeholder="Paste the plan JSON from Claude here..."></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" onclick="loadJSON()">Load plan</button>
+          <button class="btn ghost" onclick="copyFormat()">Copy the JSON format for Claude</button>
+          <button class="btn ghost" onclick="undoLast()">↩︎ Undo last import / reset</button>
+        </div>
+        <div id="importMsg" class="msg"></div>
+      </div>
+    </div>
+    <div id="pane-settings" class="tools-pane">
+      <div class="panel">
+        <h2>Settings</h2>
+        <div class="kv">
+          <label>Exam date</label><input type="date" id="setExam" onchange="saveSettings()">
+          <label>Hours / day</label><input type="number" id="setHours" min="1" max="14" onchange="saveSettings()">
+          <label>Days / week</label><input type="number" id="setDays" min="1" max="7" onchange="saveSettings()">
+          <label>Job note (for Claude)</label><input type="text" id="setJob" placeholder="e.g. started job, ~4h/day weekdays" onchange="saveSettings()">
+        </div>
+        <p class="help">The job note is printed on your weekend PDF so Claude can re-pace. It does not change the plan by itself.</p>
+        <div class="row" style="margin-top:8px">
+          <button class="btn ghost" onclick="loadSample()">🧪 Load sample data (preview)</button>
+          <button class="btn ghost" onclick="exportBackup()">⬇️ Download backup (JSON)</button>
+          <button class="btn ghost" onclick="resetAll()">♻️ Reset all ticks</button>
+        </div>
+        <div id="setMsg" class="msg"></div>
+      </div>
+    </div>
+    <div id="pane-progress" class="tools-pane">
+      <div class="panel"><h2>Weekly completion</h2><canvas id="prChart" height="120"></canvas><div id="prFallback" class="help"></div></div>
+      <div class="panel"><h2>Overall</h2><div id="prStats"></div></div>
+    </div>
+  </section>
+  <div class="foot">MA Roadmap Tracker · v1 · saved in your browser · build <span id="buildStamp"></span></div>
+</main>
+</div>
+<div id="printReport"></div>
+<script>
+const PLAN = [{"weekNo": "Week 1", "dates": "9–15 Jun", "theme": "Foundations", "goal": "By Sunday: both foundation chapters (Ch1 + Ch8) sit at 85%+ and the cost-element chain is open.", "days": [{"day": "Tue 9 Jun", "tag": "Foundations - launch day", "watch": "Topic 12 Accounting for Management — Lec 1 · Topic 14 Intro to Cost Accounting — Lec 1–3", "practice": "Study Hub Ch1 — 22 Qs (target 85%)", "revise": "—", "test": "—", "lectures": ["Topic 12 Accounting for Management — Lec 1", "Topic 14 Intro to Cost Accounting — Lec 1", "Topic 14 Intro to Cost Accounting — Lec 2", "Topic 14 Intro to Cost Accounting — Lec 3"]}, {"day": "Wed 10 Jun", "tag": "Engine day - cost behaviour", "watch": "Topic 14 Intro to Cost Accounting — Lec 4–6", "practice": "Study Hub Ch8 — 12 Qs (target 85%) · BPP cost behaviour — ~6 Qs", "revise": "Recall: Day-1 foundations, from memory", "test": "—", "lectures": ["Topic 14 Intro to Cost Accounting — Lec 4", "Topic 14 Intro to Cost Accounting — Lec 5", "Topic 14 Intro to Cost Accounting — Lec 6"]}, {"day": "Thu 11 Jun", "tag": "Engine day - high-low + coding", "watch": "Topic 14 Intro to Cost Accounting — Lec 7–8 · Topic 15 Coding — Lec 1–3", "practice": "Study Hub Ch8 — 13 Qs (target 85%) · BPP cost behaviour — ~6 Qs", "revise": "Recall: cost behaviour, from memory", "test": "—", "lectures": ["Topic 14 Intro to Cost Accounting — Lec 7", "Topic 14 Intro to Cost Accounting — Lec 8", "Topic 15 Coding — Lec 1", "Topic 15 Coding — Lec 2", "Topic 15 Coding — Lec 3"]}, {"day": "Fri 12 Jun", "tag": "Materials open", "watch": "Topic 14 Intro to Cost Accounting — Lec 9–10 · Topic 11 Materials — Lec 1", "practice": "BPP mop-up + FIFO/LIFO/AVCO worked exercises", "revise": "Recall: foundations + high-low, from memory", "test": "—", "lectures": ["Topic 14 Intro to Cost Accounting — Lec 9", "Topic 14 Intro to Cost Accounting — Lec 10", "Topic 11 Materials — Lec 1"]}, {"day": "Sat 13 Jun", "tag": "Materials deep - valuation", "watch": "Topic 14 Intro to Cost Accounting — Lec 11 · Topic 11 Materials — Lec 2–3", "practice": "FIFO/LIFO/AVCO mixed exercises", "revise": "Recall: FIFO/LIFO + high-low, from memory", "test": "—", "lectures": ["Topic 14 Intro to Cost Accounting — Lec 11", "Topic 11 Materials — Lec 2", "Topic 11 Materials — Lec 3"]}, {"day": "Sun 14 Jun", "tag": "Consolidation - lock the 85%", "watch": "— (lighter day, revise only)", "practice": "Re-test Ch1 + Ch8 below 85% · mixed FIFO/LIFO/AVCO drill", "revise": "Recall: FIFO/LIFO + AVCO, from memory", "test": "—", "tests": ["Ch1 Management Information — chapter test · target 85%"], "lectures": []}, {"day": "Mon 15 Jun", "tag": "Lighter - recall only", "watch": "— (lighter day, revise only)", "practice": "Full-week mixed recall set · short Ch8 self-test", "revise": "Recall: full first week, from memory", "test": "—", "tests": ["Ch8 Cost Classification — chapter test · target 75%"], "lectures": []}]}, {"weekNo": "Week 2", "dates": "16–22 Jun", "theme": "Critical engines", "goal": "By Sunday: the cost-accounting spine is closed and both critical engines (Overheads + Abs/Marginal) are drilled to 90%+.", "days": [{"day": "Tue 16 Jun", "tag": "Close out Materials", "watch": "Topic 11 Materials — Lec 4–6", "practice": "Study Hub Ch3 — 13 Qs (target 88%) · BPP Materials — ~6 Qs", "revise": "Recall: materials pricing + cost classification, from memory", "test": "—", "lectures": ["Topic 11 Materials — Lec 4", "Topic 11 Materials — Lec 5", "Topic 11 Materials — Lec 6"]}, {"day": "Wed 17 Jun", "tag": "Labour engine starts", "watch": "Topic 10 Labour — Lec 1–4", "practice": "Study Hub Ch2 — 9 Qs (target 90%) · BPP Materials — ~6 Qs", "revise": "Recall: EOQ, from memory", "test": "—", "tests": ["Ch2 Materials — chapter test · target 80%", "Ch3 Managing Inventory — chapter test · target 80%"], "lectures": ["Topic 10 Labour — Lec 1", "Topic 10 Labour — Lec 2", "Topic 10 Labour — Lec 3", "Topic 10 Labour — Lec 4"]}, {"day": "Thu 18 Jun", "tag": "Labour ratios + remuneration", "watch": "Topic 10 Labour — Lec 5–8", "practice": "Study Hub Ch4 — ~10 Qs (target 88%) · BPP Labour — ~5 Qs", "revise": "Recall: materials + reorder levels, from memory", "test": "—", "lectures": ["Topic 10 Labour — Lec 5", "Topic 10 Labour — Lec 6", "Topic 10 Labour — Lec 7", "Topic 10 Labour — Lec 8"]}, {"day": "Fri 19 Jun", "tag": "Finish Labour + EOQ", "watch": "Topic 10 Labour — Lec 9–10", "practice": "Study Hub Ch4 — ~5 Qs (target 88%) · BPP Labour — ~5 Qs", "revise": "Recall: EOQ + reorder + labour ratios, from memory", "test": "—", "lectures": ["Topic 10 Labour — Lec 9", "Topic 10 Labour — Lec 10"]}, {"day": "Sat 20 Jun", "tag": "Critical engine - Overheads", "watch": "Topic 8 Overheads — Lec 1–4", "practice": "Study Hub Ch5 — ~8 Qs (target 90%) · BPP Overheads — ~15 Qs", "revise": "Recall: labour ratios + Week-1 foundations, from memory", "test": "—", "tests": ["Ch4 Labour — chapter test · target 80%"], "lectures": ["Topic 8 Overheads — Lec 1", "Topic 8 Overheads — Lec 2", "Topic 8 Overheads — Lec 3", "Topic 8 Overheads — Lec 4"]}, {"day": "Sun 21 Jun", "tag": "Engines locked - Abs vs Marginal", "watch": "Topic 8 Overheads — Lec 5 · Topic 9 Absorption & Marginal — Lec 1–3", "practice": "Study Hub Ch5 — ~8 Qs · Ch6 — 12 Qs (target 90%) · BPP Overheads — ~15 Qs", "revise": "Recall: overhead absorption rate, from memory", "test": "—", "lectures": ["Topic 8 Overheads — Lec 5", "Topic 9 Absorption & Marginal — Lec 1", "Topic 9 Absorption & Marginal — Lec 2", "Topic 9 Absorption & Marginal — Lec 3"]}, {"day": "Mon 22 Jun", "tag": "Lighter - recall + mock", "watch": "— (lighter day, revise only)", "practice": "Re-attempt all Week-2 error-log items", "revise": "Recall: EOQ, labour ratios, overhead stages, abs-vs-marginal, from memory", "test": "MINI-MOCK — ~25-30 Qs across Ch2-Ch6 (target 85%), then mark it", "tests": ["Ch5 Overheads — chapter test · target 85%", "Ch6 Absorption & Marginal Costing — chapter test · target 85%"], "lectures": []}]}, {"weekNo": "Week 3", "dates": "23–29 Jun", "theme": "Section-B security", "goal": "By Sunday: Budgeting core and Standard Costing are open and in daily MTQ rotation, with forecasting feeders done.", "days": [{"day": "Tue 23 Jun", "tag": "Section-B security - forecasting feeder", "watch": "Topic 2 Budgeting / forecasting — Lec 1–3 · Standard Costing & Variance", "practice": "Study Hub Ch12 — 14 Qs (target 82%) · BPP variance bank — ~5 Qs · 1 Budgeting MTQ skeleton", "revise": "—", "test": "—", "lectures": ["Topic 2 Budgeting / forecasting — Lec 1", "Topic 2 Budgeting / forecasting — Lec 2", "Topic 2 Budgeting / forecasting — Lec 3", "Standard Costing & Variance"]}, {"day": "Wed 24 Jun", "tag": "Section-B security - time-series feeder", "watch": "Topic 2 Budgeting / forecasting — Lec 4–6 · Standard Costing & Variance", "practice": "Study Hub Ch13 — 7 Qs (target 80%) · BPP variance bank — ~5 Qs · standard costing bank — ~3 Qs · 1 variance MTQ", "revise": "Recall: forecasting (high-low + regression), from memory", "test": "—", "lectures": ["Topic 2 Budgeting / forecasting — Lec 4", "Topic 2 Budgeting / forecasting — Lec 5", "Topic 2 Budgeting / forecasting — Lec 6", "Standard Costing & Variance"]}, {"day": "Thu 25 Jun", "tag": "Section-B security - Budgeting core opens", "watch": "Topic 2 Budgeting / forecasting — Lec 7–9", "practice": "Study Hub Ch18 — 23 Qs (target 90%) · 1 cash budget by hand · 1 cash-budget MTQ", "revise": "Recall: forecasting + time series, from memory", "test": "—", "lectures": ["Topic 2 Budgeting / forecasting — Lec 7", "Topic 2 Budgeting / forecasting — Lec 8", "Topic 2 Budgeting / forecasting — Lec 9"]}, {"day": "Fri 26 Jun", "tag": "Engine day - variance framework", "watch": "Topic 2 Budgeting / forecasting — Lec 10–11 · Standard Costing & Variance", "practice": "Study Hub Ch23 — 6 Qs (target 88%) · BPP variance bank — ~10 Qs · standard costing bank — ~4 Qs · 1st operating statement by hand · 1 variance MTQ", "revise": "Recall: budgeting, time series, Week-2 engines, from memory", "test": "—", "tests": ["Ch12 Forecasting Costs & Revenues — chapter test · target 75%", "Ch13 Time Series Analysis — chapter test · target 75%"], "lectures": ["Topic 2 Budgeting / forecasting — Lec 10", "Topic 2 Budgeting / forecasting — Lec 11", "Standard Costing & Variance"]}, {"day": "Sat 27 Jun", "tag": "Section-B security - flexible budgets", "watch": "Topic 2 Budgeting / forecasting — Lec 12–14 · Standard Costing & Variance", "practice": "Study Hub Ch19 — 24 Qs · Ch23 — 6 Qs (target 88%) · BPP variance bank — ~5 Qs · 1 flexed-budget MTQ · 1 operating statement", "revise": "Recall: standard costing, budgeting, forecasting, from memory", "test": "—", "lectures": ["Topic 2 Budgeting / forecasting — Lec 12", "Topic 2 Budgeting / forecasting — Lec 13", "Topic 2 Budgeting / forecasting — Lec 14", "Standard Costing & Variance"]}, {"day": "Sun 28 Jun", "tag": "Section-B security - behavioural + consolidate", "watch": "Topic 2 Budgeting / forecasting — Lec 15–17 · Standard Costing & Variance", "practice": "Study Hub Ch20 — 9 Qs (target 80%) · BPP variance bank — ~5 Qs · budget-setting bank — ~20 Qs · standard costing bank — ~3 Qs · 3rd operating statement · 2 MTQs", "revise": "Recall: flexible budgets, standard costing, time series, from memory", "test": "—", "lectures": ["Topic 2 Budgeting / forecasting — Lec 15", "Topic 2 Budgeting / forecasting — Lec 16", "Topic 2 Budgeting / forecasting — Lec 17", "Standard Costing & Variance"]}, {"day": "Mon 29 Jun", "tag": "Lighter - recall + mock", "watch": "— (lighter day, revise only)", "practice": "Re-attempt all Week-3 error-log items", "revise": "Recall: Week-2 engines, Week-1 foundations, flexible budgets, budgeting, from memory", "test": "MINI-MOCK — 2 MTQs timed (1 Budgeting + 1 Standard Costing), then mark it", "tests": ["Ch18 Nature & Purpose of Budgeting — chapter test · target 85%", "Ch19 Fixed & Flexible Budgets, Control — chapter test · target 85%", "Ch20 Behavioural Aspects of Budgeting — chapter test · target 85%"], "lectures": []}]}, {"weekNo": "Week 4", "dates": "30 Jun–6 Jul", "theme": "Section-B trio complete", "goal": "By Sunday: all three guaranteed MTQ areas are built (Budgeting, Standard Costing, Performance) and forecasting is finished.", "days": [{"day": "Tue 30 Jun", "tag": "Section-B security - forecasting finish", "watch": "Topic 2 Budgeting / forecasting — Lec 18–19 · Standard Costing & Variance", "practice": "Study Hub Ch14 — 4 Qs (target 85%) · Ch12/13 tidy-up — ~8 Qs · Ch23 — 4 Qs · BPP variance bank — ~6 Qs", "revise": "Recall: budgeting cost split + forecasting basics, from memory", "test": "—", "lectures": ["Topic 2 Budgeting / forecasting — Lec 18", "Topic 2 Budgeting / forecasting — Lec 19", "Standard Costing & Variance"]}, {"day": "Wed 1 Jul", "tag": "Engine day - Performance launch", "watch": "Topic 2 Budgeting / forecasting — Lec 20 · Topic 3 Performance Measurement — Lec 1–2 · Standard Costing & Variance", "practice": "Study Hub Ch24 — 10 Qs (target 80%) · Ch23 — 4 Qs · BPP non-financial bank — ~8 Qs", "revise": "Recall: index numbers + forecasting, from memory", "test": "—", "tests": ["Ch14 Index Numbers — chapter test · target 75%"], "lectures": ["Topic 2 Budgeting / forecasting — Lec 20", "Topic 3 Performance Measurement — Lec 1", "Topic 3 Performance Measurement — Lec 2", "Standard Costing & Variance"]}, {"day": "Thu 2 Jul", "tag": "Engine day - ratios", "watch": "Topic 3 Performance Measurement — Lec 3–4 · Standard Costing & Variance", "practice": "Study Hub Ch25 — 7 Qs (target 82%) · Ch23 — 4 Qs · BPP financial performance bank — ~10 Qs", "revise": "Recall: objectives/CSF/KPI + index numbers, from memory", "test": "—", "lectures": ["Topic 3 Performance Measurement — Lec 3", "Topic 3 Performance Measurement — Lec 4", "Standard Costing & Variance"]}, {"day": "Fri 3 Jul", "tag": "Section-B trio complete", "watch": "Topic 3 Performance Measurement — Lec 5–6 · Standard Costing & Variance", "practice": "Study Hub Ch26 — ~12 Qs (target 80%) · Ch23 — 3 Qs · BPP target costing bank — ~8 Qs", "revise": "Recall: ratios, CSF/KPI, index numbers, from memory", "test": "—", "lectures": ["Topic 3 Performance Measurement — Lec 5", "Topic 3 Performance Measurement — Lec 6", "Standard Costing & Variance"]}, {"day": "Sat 4 Jul", "tag": "Performance consolidation", "watch": "— (lighter day, revise only) · Standard Costing & Variance", "practice": "Study Hub Ch26 — ~11 Qs (finishes Performance) · BPP variance bank — ~7 Qs · standard costing — ~4 Qs", "revise": "Recall: ROI/RI + ratios, from memory", "test": "—", "lectures": ["Standard Costing & Variance"]}, {"day": "Sun 5 Jul", "tag": "Standard Costing deep-drill", "watch": "Standard Costing & Variance", "practice": "BPP variance bank — ~5 Qs · standard costing — ~2 Qs · held-back Performance set, all timed", "revise": "Recall: ROI/RI + objectives, from memory", "test": "—", "lectures": ["Standard Costing & Variance"]}, {"day": "Mon 6 Jul", "tag": "Lighter - recall + mock", "watch": "— (lighter day, revise only)", "practice": "Full error-log review (no new lectures)", "revise": "Recall: Ch5/Ch6 engines, ratios, ROI/RI, from memory", "test": "MINI-MOCK — ~25-30 Qs Section-B mix timed, then mark it", "tests": ["Ch24 Intro to Performance Management — chapter test · target 80%", "Ch25 Analysing Performance — chapter test · target 80%", "Ch26 Monitoring Performance & Value — chapter test · target 80%"], "lectures": []}]}, {"weekNo": "Week 5", "dates": "7–13 Jul", "theme": "Back-half calc engines", "goal": "Learn investment appraisal and process costing, then sit your first full mock.", "days": [{"day": "Tue 7 Jul", "tag": "Time value of money", "watch": "Topic 2 Compounding & Discounting — Lec 21–22 · Topic 2 Investment Appraisal — Lec 23", "practice": "Study Hub Ch16 — 7 Qs (90%) + BPP appraisal bank — ~8 Qs", "revise": "Recall: ratios and index numbers, from memory", "test": "—", "lectures": ["Topic 2 Compounding & Discounting — Lec 21", "Topic 2 Compounding & Discounting — Lec 22", "Topic 2 Investment Appraisal — Lec 23"]}, {"day": "Wed 8 Jul", "tag": "NPV core", "watch": "Topic 2 Investment Appraisal — Lec 24–25", "practice": "Study Hub Ch17 — 8 Qs (88%) + BPP appraisal bank — ~9 Qs", "revise": "Recall: compounding and payback, from memory", "test": "—", "lectures": ["Topic 2 Investment Appraisal — Lec 24", "Topic 2 Investment Appraisal — Lec 25"]}, {"day": "Thu 9 Jul", "tag": "IRR & decision rules", "watch": "Topic 2 Investment Appraisal — Lec 26–27", "practice": "Study Hub Ch17 — 8 Qs (88%, chapter done) + BPP appraisal bank — ~8 Qs (bank done)", "revise": "Recall: compounding and NPV, from memory", "test": "—", "tests": ["Ch16 Compounding & Discounting — chapter test · target 80%", "Ch17 Investment Appraisal — chapter test · target 80%"], "lectures": ["Topic 2 Investment Appraisal — Lec 26", "Topic 2 Investment Appraisal — Lec 27"]}, {"day": "Fri 10 Jul", "tag": "Process costing opens", "watch": "Topic 5 Process costing — Lec 1–2", "practice": "Study Hub Ch7 — 6 Qs (85%) + BPP process bank — ~7 Qs", "revise": "Recall: performance ratios and NPV, from memory", "test": "—", "lectures": ["Topic 5 Process costing — Lec 1", "Topic 5 Process costing — Lec 2"]}, {"day": "Sat 11 Jul", "tag": "Finish the syllabus block", "watch": "Topic 5 Process costing — Lec 3 · Topic 2 Spreadsheets — Lec 28–29", "practice": "Study Hub Ch7 — 4 Qs (done) + Ch15 — 3 Qs (85%) + BPP process bank — ~5 Qs (done)", "revise": "Recall: process losses and NPV, from memory", "test": "—", "tests": ["Ch7 Process, Joint & Further Processing — chapter test · target 80%", "Ch15 Spreadsheets — chapter test · target 85%"], "lectures": ["Topic 5 Process costing — Lec 3", "Topic 2 Spreadsheets — Lec 28", "Topic 2 Spreadsheets — Lec 29"]}, {"day": "Sun 12 Jul", "tag": "Budgeting MTQ", "watch": "— (no new lectures)", "practice": "Budgeting MTQ bank — timed + ~5–6 mixed Ch16/17/7 Qs", "revise": "Recall: full NPV layout and a process account, from memory", "test": "—", "lectures": []}, {"day": "Mon 13 Jul", "tag": "DIAGNOSTIC", "watch": "— (no new lectures)", "practice": "Mark the mock + 1 weakest-area MTQ recall", "revise": "Recall: the single weakest question, from memory", "test": "DIAGNOSTIC MOCK — Specimen, 2h, mark it", "lectures": []}]}, {"weekNo": "Week 6", "dates": "14–20 Jul", "theme": "Finish all first-time learning", "goal": "Clear every remaining lecture and finish Standard Costing before the no-new-lectures wall.", "days": [{"day": "Tue 14 Jul", "tag": "Job/Batch close-out", "watch": "Topic 7 Job, Batch & Service costing — Lec 1–3", "practice": "Study Hub Ch9 — 14 Qs (88%) + BPP variance bank", "revise": "Recall: investment appraisal and process, from memory", "test": "—", "tests": ["Ch9 Job, Batch & Service Costing — chapter test · target 80%"], "lectures": ["Topic 7 Job, Batch & Service costing — Lec 1", "Topic 7 Job, Batch & Service costing — Lec 2", "Topic 7 Job, Batch & Service costing — Lec 3"]}, {"day": "Wed 15 Jul", "tag": "Alternative costing", "watch": "Topic 4 Alternative costing — Lec 1–3", "practice": "Study Hub Ch10 — 10 Qs (85%) + BPP variance bank", "revise": "Recall: job and batch costing, from memory", "test": "—", "tests": ["Ch10 Alternative Cost Accounting — chapter test · target 85%"], "lectures": ["Topic 4 Alternative costing — Lec 1", "Topic 4 Alternative costing — Lec 2", "Topic 4 Alternative costing — Lec 3"]}, {"day": "Thu 16 Jul", "tag": "Expected values", "watch": "Topic 6 Summarising data — Lec 1–3", "practice": "Study Hub Ch11 — 8 Qs (85%) + BPP variance bank", "revise": "Recall: alternative costing methods, from memory", "test": "—", "lectures": ["Topic 6 Summarising data — Lec 1", "Topic 6 Summarising data — Lec 2", "Topic 6 Summarising data — Lec 3"]}, {"day": "Fri 17 Jul", "tag": "Summarising data", "watch": "Topic 6 Summarising data — Lec 4–6", "practice": "Study Hub Ch22 — 13 Qs (85%) + BPP summarising — ~12 Qs + finish variance bank", "revise": "Recall: expected values, from memory", "test": "—", "tests": ["Ch11 Sampling & Expected Values — chapter test · target 85%", "Ch22 Summarising & Analysing Data — chapter test · target 75%"], "lectures": ["Topic 6 Summarising data — Lec 4", "Topic 6 Summarising data — Lec 5", "Topic 6 Summarising data — Lec 6"]}, {"day": "Sat 18 Jul", "tag": "Last lectures", "watch": "Topic 13 Presenting — Lec 1 · New syllabus additions — Lec 1–2", "practice": "Study Hub Ch21 — 9 Qs (85%) + light Study Hub MCQ recap", "revise": "Recall: mean, standard deviation and the normal curve, from memory", "test": "—", "tests": ["Ch21 Presenting Information — chapter test · target 85%"], "lectures": ["Topic 13 Presenting — Lec 1", "New syllabus additions — Lec 1", "New syllabus additions — Lec 2"]}, {"day": "Sun 19 Jul", "tag": "Operating-statement fluency", "watch": "— (no new lectures)", "practice": "Study Hub Ch23 — 15 Qs (85%) + light MCQ recap", "revise": "Recall: presenting and the new additions, from memory", "test": "—", "tests": ["Ch23 Standard Costing & Variance — chapter test · target 85%"], "lectures": []}, {"day": "Mon 20 Jul", "tag": "Lighter — recall", "watch": "— (no new lectures)", "practice": "Mixed week sweep + light MCQ recap + top weak-area hits", "revise": "Recall: investment appraisal, process and performance, from memory", "test": "—", "lectures": []}]}, {"weekNo": "Rev A", "dates": "21–26 Jul", "theme": "First revision week", "goal": "Confirm the base, sit Mock 1, and drill all three guaranteed MTQ areas to time.", "days": [{"day": "Tue 21 Jul", "tag": "Foundation reverse-sweep", "watch": "Finish any slipped lecture first, then revision (no new topics)", "practice": "Thin OT slice on Ch1/8/2/3/4 + deep BPP Overheads set · finish any leftover Standard Costing questions (to 51/51)", "revise": "Recall: early chapters, from memory; rebuild the formula sheet", "test": "—", "lectures": []}, {"day": "Wed 22 Jul", "tag": "Budgeting MTQ", "watch": "Revision — no new lectures", "practice": "Budgeting MTQ bank round 1 — timed", "revise": "Recall: Ch5/6/7/9 methods + absorption vs marginal, from memory", "test": "—", "lectures": []}, {"day": "Thu 23 Jul", "tag": "MOCK 1", "watch": "Revision — no new lectures", "practice": "Re-work every missed question + rank weak areas", "revise": "Recall: rebuild the formula sheet, from memory", "test": "MOCK 1 — full 2h paper", "lectures": []}, {"day": "Fri 24 Jul", "tag": "Standard Costing blitz", "watch": "Revision — no new lectures", "practice": "Variance bank + operating statements + Standard Costing MTQ bank — timed", "revise": "Recall: every variance + one operating statement, from memory", "test": "—", "lectures": []}, {"day": "Sat 25 Jul", "tag": "Performance + Budgeting MTQ", "watch": "Revision — no new lectures", "practice": "Performance MTQ bank + ROI/RI drill + Budgeting MTQ round 2 — timed", "revise": "Recall: ROI/RI/ROCE + budgeting lines, from memory", "test": "—", "lectures": []}, {"day": "Sun 26 Jul", "tag": "Lighter — recall", "watch": "Revision — no new lectures", "practice": "Error-log review + light MCQ recap + one weakest area", "revise": "Recall: the formula sheet + weakest area, from memory", "test": "—", "lectures": []}]}, {"weekNo": "Rev B", "dates": "27 Jul–4 Aug", "theme": "Final revision then exam", "goal": "Peak the guaranteed MTQ marks, sit Mock 2, then taper fresh into exam day.", "days": [{"day": "Mon 27 Jul", "tag": "Weak-area drills", "watch": "Revision — no new lectures", "practice": "Close Mock 1 red items + timed appraisal and process Section-A sets", "revise": "Recall: each fixed concept on a fresh question, from memory", "test": "—", "lectures": []}, {"day": "Tue 28 Jul", "tag": "Standard Costing to fluency", "watch": "Revision — no new lectures", "practice": "Full Standard Costing MTQ bank + Ch23 weak set + operating statements", "revise": "Recall: every variance + the operating statement skeleton, from memory", "test": "—", "lectures": []}, {"day": "Wed 29 Jul", "tag": "MOCK 2", "watch": "Revision — no new lectures", "practice": "Full post-mortem + trend check vs Mock 1 + weak-area shortlist", "revise": "Recall: any formula the mock exposed, from memory", "test": "MOCK 2 — full 2h paper", "lectures": []}, {"day": "Thu 30 Jul", "tag": "Mock-2 remediation", "watch": "Revision — no new lectures", "practice": "Mock-2 weak-area drills + three MTQ banks rotated — timed", "revise": "Recall: a mixed three-area MTQ set, from memory", "test": "—", "lectures": []}, {"day": "Fri 31 Jul", "tag": "MTQ PEAK", "watch": "Revision — no new lectures", "practice": "Standard Costing + Budgeting + Performance at peak + 3-MTQ timed circuit", "revise": "Recall: cash-budget and operating-statement templates, from memory", "test": "—", "lectures": []}, {"day": "Sat 1 Aug", "tag": "Timed Section-A pace", "watch": "Revision — no new lectures", "practice": "Full timed Section-A bank + one MTQ from each bank + mixed set", "revise": "Recall: confirm the MTQ peak held overnight, from memory", "test": "—", "lectures": []}, {"day": "Sun 2 Aug", "tag": "Lighter — formula sheet", "watch": "Revision — no new lectures", "practice": "Short, gentle set on one weakest area only", "revise": "Recall: the whole formula sheet, from memory", "test": "—", "lectures": []}, {"day": "Mon 3 Aug", "tag": "Taper", "watch": "Revision — no new lectures", "practice": "Light easy OT touch + read the error log end-to-end", "revise": "Recall: cash-budget and operating-statement templates, from memory", "test": "—", "lectures": []}, {"day": "Tue 4 Aug", "tag": "EXAM", "watch": "— (exam day)", "practice": "—", "revise": "Glance at the formula sheet only", "test": "EXAM DAY — ACCA MA, 2 hours", "lectures": []}]}];
+const DEFAULT_EXAM = "2026-08-04";
+const KEY = "ma_roadmap_tracker_v1";
+const MON = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+const OFFS = [1,3,7];
+
+let S = load();
+function load(){
+  let d = {};
+  try{ d = JSON.parse(localStorage.getItem(KEY)||"{}"); }catch(e){ d={}; }
+  d.ticks=d.ticks||{}; d.notes=d.notes||{}; d.watch=d.watch||{}; d.revDone=d.revDone||{};
+  if(d.demoV4) delete d.demoV4; // purge any old sample/demo test data so checkpoints reflect REAL attempts only
+  d.settings=d.settings||{}; if(!d.settings.exam) d.settings.exam=DEFAULT_EXAM;
+  d.plan=d.plan||null; if(d.plan) normalizePlan(d.plan);
+  return d;
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); const w=document.getElementById('saveWarn'); if(w) w.classList.remove('show'); return true; }catch(e){ const w=document.getElementById('saveWarn'); if(w) w.classList.add('show'); return false; } }
+function snapshot(){ try{ localStorage.setItem(KEY+'_prev', JSON.stringify(S)); }catch(e){} }
+function undoLast(){
+  let prev=null; try{ prev=JSON.parse(localStorage.getItem(KEY+'_prev')||'null'); }catch(e){}
+  if(!prev){ alert('Nothing to undo yet — this appears after an Import or Reset.'); return; }
+  if(!confirm('Undo your last Import / Reset? This restores your previous plan, ticks and notes.')) return;
+  S=prev; S.ticks=S.ticks||{}; S.notes=S.notes||{}; S.watch=S.watch||{}; S.revDone=S.revDone||{}; S.settings=S.settings||{}; if(S.plan) normalizePlan(S.plan);
+  save(); fillWeekSelect(document.getElementById('ovWeek')); fillWeekSelect(document.getElementById('wkSelect'),true); render();
+  const m=document.getElementById('importMsg'); if(m){ m.className='msg ok'; m.textContent='Restored your previous state ✓'; }
+}
+function plan(){ return S.plan || PLAN; }
+
+function parseDay(s){ // "Tue 9 Jun" -> Date in exam year
+  const p=String(s).split(/\s+/); const yr=new Date(S.settings.exam||DEFAULT_EXAM).getFullYear();
+  const d=parseInt(p[1],10); const m=MON[p[2]]; if(isNaN(d)||m==null) return null;
+  return new Date(yr,m,d);
+}
+function getToday(){
+  const q=new URLSearchParams(location.search).get('today');
+  const t=q?parseISO(q):new Date(); t.setHours(0,0,0,0); return t;
+}
+function parseISO(s){ const p=String(s||'').split('-'); return new Date(+p[0],(+p[1]||1)-1,(+p[2]||1)); }
+function iso(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0'); }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); x.setHours(0,0,0,0); return x; }
+function fmtD(d){ return d? d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : ""; }
+
+// task helpers
+const TYPES=[["practice","✍️"],["test","📝"]];
+function tasksOf(day){ return TYPES.filter(([t])=> day[t] && String(day[t]).trim() && String(day[t]).trim()!=="—"); }
+function lecsOf(day){ return day.lectures||[]; }
+function dayTopics(day){ const out=[]; (day.lectures||[]).forEach(l=>{ const t=String(l).replace(/\s*—\s*Lec.*$/,'').trim(); if(t && out.indexOf(t)<0) out.push(t); }); return out.join(' + ') || cleanWatch(day.watch); }
+// split a day's "watch" (which may group "Lec 1–3") into individual tickable lectures
+function expandLectures(day){
+  if(Array.isArray(day.lectures)) return;
+  const wv=String(day.watch||''); const NOTE=/no new lectures|lighter day|exam day|revise only/i; const out=[];
+  if(/—\s*Lec/.test(wv) || /practice only/i.test(wv)){
+    wv.split(/\s*·\s*/).forEach(seg=>{ seg=seg.trim(); if(!seg||seg==='—') return;
+      const m=seg.match(/^(.+?)\s*—\s*Lec\s*(\d+)(?:[–-](\d+))?\s*$/);
+      if(m){ const t=m[1].trim(),a=+m[2],b=m[3]?+m[3]:+m[2]; for(let n=a;n<=b;n++) out.push(t+' — Lec '+n); }
+      else if(!NOTE.test(seg)) out.push(seg);
+    });
+  }
+  day.lectures=out;
+}
+function normalizePlan(weeks){ (weeks||[]).forEach(w=>(w.days||[]).forEach(expandLectures)); return weeks; }
+function tid(wi,di,t){ return wi+"-"+di+"-"+t; }
+function did(wi,di){ return wi+"-"+di; }
+
+// ---- shared V4 test-attempt store (same contract as the Test Dashboard + Master Dashboard) ----
+const V4_DB="acca_v4_db", V4_QUEUE="acca_v4_pending_imports";
+function readV4(){
+  let out=[];
+  try{ const db=JSON.parse(localStorage.getItem(V4_DB)||"{}"); if(db&&Array.isArray(db.attempts)) out=out.concat(db.attempts); }catch(e){}
+  try{ const q=JSON.parse(localStorage.getItem(V4_QUEUE)||"[]"); if(Array.isArray(q)) out=out.concat(q); }catch(e){}
+  // tick a chapter-test checkpoint ONLY for a submitted CHAPTER TEST (mode "chtest").
+  // Practice questions (mode "practice") DO NOT count — only sitting the actual test does.
+  return out.filter(a=> a && (a.subject||"MA")==="MA" && !a.rePractice && a.mode==="chtest" && (a.submittedAt||a.date) && a.totalPossible>0);
+}
+let _v4cache=null;
+function chTestStatus(ch){
+  if(_v4cache===null){ _v4cache={}; readV4().forEach(a=>{ const c=a.ch||a.chapter; if(!c)return; (_v4cache[c]=_v4cache[c]||[]).push(a); }); }
+  const a=(_v4cache[ch]||[]).slice().sort((x,y)=> new Date(x.submittedAt||x.date)-new Date(y.submittedAt||y.date));
+  if(!a.length) return null;
+  const last=a[a.length-1]; const pct=last.totalPossible? Math.round(100*last.totalScore/last.totalPossible):0;
+  return {pct, date:(last.submittedAt||last.date||"").slice(0,10), set:last.set||"", mode:last.mode, n:a.length};
+}
+function chOf(testLabel){ const m=/Ch(\d+)/.exec(testLabel||""); return m? +m[1]: null; }
+function testDone(wi,di,ci,label){ return !!S.ticks[tid(wi,di,'ct'+ci)] || !!chTestStatus(chOf(label)); }
+
+// ---- progress ----
+function weekProg(w,wi){
+  let done=0,total=0;
+  w.days.forEach((day,di)=>{
+    lecsOf(day).forEach((_,li)=>{ total++; if(S.ticks[tid(wi,di,'L'+li)]) done++; });
+    tasksOf(day).forEach(([t])=>{ total++; if(S.ticks[tid(wi,di,t)]) done++; });
+    (day.tests||[]).forEach((lbl,ci)=>{ total++; if(testDone(wi,di,ci,lbl)) done++; });
+  });
+  return {done,total,pct: total? Math.round(done/total*100):0};
+}
+function allProg(){ let done=0,total=0; plan().forEach((w,wi)=>{const p=weekProg(w,wi);done+=p.done;total+=p.total;}); return {done,total,pct:total?Math.round(done/total*100):0}; }
+function daysToExam(){ const e=parseISO(S.settings.exam||DEFAULT_EXAM); e.setHours(0,0,0,0); return Math.round((e-getToday())/86400000); }
+
+// ---- 1/3/7 engine ----
+function dueRevisions(){
+  const today=getToday(); const out=[];
+  plan().forEach((w,wi)=> w.days.forEach((day,di)=>{
+    if(!((day.lectures||[]).length)) return;
+    const wd = S.watch[did(wi,di)]; // ISO date the day's lectures were first ticked
+    if(!wd) return;
+    const base=new Date(wd); base.setHours(0,0,0,0);
+    OFFS.forEach(off=>{
+      const due=addDays(base,off);
+      if(due>today) return; // not due yet
+      const id=did(wi,di)+"-r"+off;
+      if(S.revDone[id]) return;
+      out.push({id, label:dayTopics(day), off, due, overdue: due<today, wi, di});
+    });
+  }));
+  out.sort((a,b)=> a.due-b.due);
+  return out;
+}
+function cleanWatch(s){ return String(s).replace(/\s*—.*$/,'').trim() || String(s); }
+
+// ---- render ----
+function showTab(name){
+  ['overview','weekly','topics','tools'].forEach(n=>{
+    document.getElementById('tab-'+n).classList.toggle('active',n===name);
+    document.getElementById('t-'+n).classList.toggle('active',n===name);
+  });
+  if(name==='tools') showTool();
+  render();
+}
+function showTool(){
+  const v=document.getElementById('toolSelect').value;
+  ['update','settings','progress'].forEach(p=> document.getElementById('pane-'+p).classList.toggle('active',p===v));
+  if(v==='progress') drawProgress();
+}
+
+function render(){
+  _v4cache=null;
+  document.getElementById('countN').textContent = daysToExam();
+  // overview week dropdown
+  const ovWeek=document.getElementById('ovWeek');
+  const scope=document.getElementById('ovScope').value;
+  ovWeek.style.display = scope==='week'?'':'none';
+  if(ovWeek.options.length!==plan().length) fillWeekSelect(ovWeek);
+  // weekly dropdown
+  fillWeekSelect(document.getElementById('wkSelect'), true);
+  renderOverview(); renderWeekly(); renderTopics();
+}
+function fillWeekSelect(sel, keep){
+  const cur=sel.value;
+  if(sel.options.length!==plan().length){
+    sel.innerHTML='';
+    plan().forEach((w,wi)=>{ const o=document.createElement('option'); o.value=wi; o.textContent=w.weekNo+" · "+w.dates; sel.appendChild(o); });
+    if(keep && cur!=='') sel.value=cur; else if(!keep) sel.value=cur||defaultWeek();
+  }
+}
+function defaultWeek(){ // current week by date
+  const t=getToday(); let idx=0;
+  plan().forEach((w,wi)=>{ const last=parseDay(w.days[w.days.length-1].day); if(last && last>=t && idx===0 && parseDay(w.days[0].day)<=t) idx=wi; });
+  // fallback: first week whose last day >= today
+  if(idx===0){ for(let wi=0;wi<plan().length;wi++){ const last=parseDay(plan()[wi].days[plan()[wi].days.length-1].day); if(last && last>=t){ idx=wi; break; } } }
+  return idx;
+}
+function renderOverview(){
+  renderPace();
+  const scope=document.getElementById('ovScope').value;
+  let p, label;
+  if(scope==='week'){ const wi=+document.getElementById('ovWeek').value||0; p=weekProg(plan()[wi],wi); label=plan()[wi].weekNo; }
+  else { p=allProg(); label="Whole plan"; }
+  const rev=dueRevisions(); const od=rev.filter(r=>r.overdue).length;
+  document.getElementById('ovCards').innerHTML =
+    card(p.pct+"%", label+" done", p.done+" / "+p.total+" tasks")+
+    card(p.done, "tasks ticked", scope==='week'?"this week":"across the plan")+
+    card(daysToExam(), "days to exam", new Date(S.settings.exam).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}))+
+    card(rev.length, "revisions due", od? (od+" overdue"):"all on track");
+  // bar
+  // charts
+  drawOverviewChart();
+  drawDoughnuts();
+  // revise today
+  document.getElementById('revCount').textContent = rev.length? "("+rev.length+" due"+(od?", "+od+" overdue":"")+")":"(nothing due — tick some lectures!)";
+  document.getElementById('ovRev').innerHTML = rev.length? rev.map(revRow).join('') : '<div class="empty">Nothing due yet. When you tick a lecture as watched, it’ll appear here 1, 3 and 7 days later.</div>';
+}
+function card(v,k,s){ const vv=String(v).replace('%','<small>%</small>'); return '<div class="stat"><div class="v">'+vv+'</div><div class="k">'+esc(k)+'</div><div class="s">'+esc(s||'')+'</div></div>'; }
+// --- Item 1: today panel + jump-to-today ---
+function findToday(){
+  const t=getToday(); const P=plan(); let up=null;
+  for(let wi=0;wi<P.length;wi++){ for(let di=0;di<P[wi].days.length;di++){
+    const d=parseDay(P[wi].days[di].day); if(!d) continue;
+    if(+d===+t) return {wi,di,upcoming:false};
+    if(d>t && !up) up={wi,di,upcoming:true};
+  }}
+  return up;
+}
+function renderToday(){
+  const el=document.getElementById('todayWrap'); if(!el) return; const T=findToday();
+  if(!T){ el.innerHTML='<div class="th">📌 Today</div><div class="empty">All planned days are done — you’re into revision &amp; mocks. Keep going.</div>'; return; }
+  const day=plan()[T.wi].days[T.di];
+  const cardHtml=dayCard(day,T.wi,T.di).replace('id="day-'+T.wi+'-'+T.di+'"','id="today-card"');
+  el.innerHTML='<div class="th">📌 '+(T.upcoming?'Next up':'Today')+' <span class="dt">'+esc(day.day)+(T.upcoming?' · nothing scheduled today':'')+'</span></div>'+cardHtml;
+}
+function jumpToday(){ const T=findToday(); if(!T) return; showTab('weekly'); const wk=document.getElementById('wkSelect'); wk.value=T.wi; render(); setTimeout(()=>{ const c=document.getElementById('day-'+T.wi+'-'+T.di); if(c) c.scrollIntoView({behavior:'smooth',block:'center'}); },80); }
+// --- Item 2: schedule pacing forecast ---
+function pacing(){
+  const t=getToday(); const P=plan(); let total=0,done=0,expected=0,firstDate=null;
+  P.forEach((w,wi)=> w.days.forEach((day,di)=>{
+    const dd=parseDay(day.day); if(dd && (!firstDate||dd<firstDate)) firstDate=dd;
+    const items=lecsOf(day).length+tasksOf(day).length+(day.tests||[]).length; let dn=0;
+    lecsOf(day).forEach((_,li)=>{ if(S.ticks[tid(wi,di,'L'+li)]) dn++; });
+    tasksOf(day).forEach(([tp])=>{ if(S.ticks[tid(wi,di,tp)]) dn++; });
+    (day.tests||[]).forEach((lbl,ci)=>{ if(testDone(wi,di,ci,lbl)) dn++; });
+    total+=items; done+=dn; if(dd && dd<=t) expected+=items;
+  }));
+  const behind=Math.max(0,expected-done), ahead=Math.max(0,done-expected);
+  const examD=parseISO(S.settings.exam||DEFAULT_EXAM);
+  const elapsed=firstDate? Math.max(1,Math.round((t-firstDate)/86400000)+1):1;
+  const rate= done>0? done/elapsed : 0; const remaining=total-done; let proj=null,onTime=true;
+  if(rate>0){ proj=addDays(t,Math.ceil(remaining/rate)); onTime= proj<=examD; }
+  return {total,done,expected,behind,ahead,remaining,proj,onTime};
+}
+function renderPace(){
+  const el=document.getElementById('paceBanner'); if(!el) return; const p=pacing(); let cls,msg,sub;
+  if(p.done===0){ cls='warn'; msg='Tick today’s tasks to start tracking your pace.'; sub='Then this tells you if you’re on track for 4 Aug.'; }
+  else if(p.behind===0){ cls='ok'; msg= p.ahead>0? '✅ Ahead of schedule — '+p.ahead+' task'+(p.ahead>1?'s':'')+' ahead' : '✅ On track'; sub= p.proj? 'At this pace you’ll finish around '+fmtD(p.proj)+(p.onTime?' — before the exam.':' — after 4 Aug.'):''; }
+  else { const d2e=daysToExam(); const perDay= p.remaining&&d2e>0? Math.ceil(p.remaining/d2e):0; cls= p.onTime?'warn':'bad'; msg='⚠ '+p.behind+' task'+(p.behind>1?'s':'')+' behind schedule'; sub='Do ~'+perDay+' tasks/day to finish by 4 Aug'+(p.proj?' · at today’s pace you’d finish '+fmtD(p.proj):'')+'.'; }
+  el.innerHTML='<div class="pace '+cls+'">'+msg+'<span class="sub">'+esc(sub)+'</span></div>';
+}
+// --- Topics: lecture progress per Mirchawala topic ---
+const TMETA={2:['Topic 2 — Budgeting','crit','Ch12–20'],3:['Topic 3 — Performance','high','Ch24–26'],4:['Topic 4 — Alternative Costing','low','Ch10'],5:['Topic 5 — Process Costing','high','Ch7'],6:['Topic 6 — Summarising Data','med','Ch11, Ch22'],7:['Topic 7 — Job/Batch/Service','high','Ch9'],8:['Topic 8 — Overheads','crit','Ch5'],9:['Topic 9 — Absorption & Marginal','crit','Ch6'],10:['Topic 10 — Labour','high','Ch4'],11:['Topic 11 — Material','high','Ch2, Ch3'],12:['Topic 12 — Accounting for Management','low','Ch1'],13:['Topic 13 — Presenting','low','Ch21'],14:['Topic 14 — Intro to Cost Accounting','med','Ch1, Ch8 · foundation'],15:['Topic 15 — Coding','low','Ch8']};
+function topicProgress(){
+  const g={}; let seq=0; // order = first appearance in the PLAN (study order), not topic number
+  const grp=(key,name,color,sub)=>{ if(!g[key]) g[key]={name,color,sub,order:seq++,total:0,done:0}; return g[key]; };
+  plan().forEach((w,wi)=> w.days.forEach((day,di)=>{
+    (day.lectures||[]).forEach((lec,li)=>{
+      let G; const m=/Topic (\d+)/.exec(lec);
+      if(m){ const n=+m[1]; const meta=TMETA[n]; if(!meta) return; G=grp('T'+n,meta[0],meta[1],meta[2]); }
+      else if(/Standard Costing/i.test(lec)) G=grp('SC','Standard Costing & Variance','crit','Ch23 · most-tested');
+      else if(/New syllabus/i.test(lec)) G=grp('NEW','New syllabus additions','low','');
+      else return;
+      G.total++; if(S.ticks[tid(wi,di,'L'+li)]) G.done++;
+    });
+  }));
+  return Object.values(g).sort((a,b)=>a.order-b.order);
+}
+function renderTopics(){
+  const body=document.getElementById('topicsBody'); if(!body) return;
+  const tp=topicProgress(); let tot=0,don=0,full=0,h='';
+  tp.forEach(t=>{ tot+=t.total; don+=t.done; const pct=t.total?Math.round(100*t.done/t.total):0; if(t.total&&t.done===t.total) full++;
+    h+='<div class="trow"><span class="tdot '+t.color+'"></span><div class="tinfo">'+
+       '<div class="tname">'+esc(t.name)+(t.sub?' <span class="sub">· '+esc(t.sub)+'</span>':'')+'</div>'+
+       '<div class="tbar"><i class="'+(pct>=100?'full':'')+'" style="width:'+pct+'%"></i></div></div>'+
+       '<div class="tcount">'+t.done+'/'+t.total+'</div></div>';
+  });
+  body.innerHTML=h;
+  const opct=tot?Math.round(100*don/tot):0;
+  document.getElementById('topicsSummary').innerHTML=
+    card(opct+'%','lectures watched',don+' / '+tot+' total')+
+    card(full+' / '+tp.length,'topics finished','all lectures watched')+
+    card(daysToExam(),'days to exam','');
+}
+function revRow(r){
+  return '<div class="rev'+(r.overdue?' overdue':'')+'">'+
+    '<input type="checkbox" '+(S.revDone[r.id]?'checked':'')+' onchange="toggleRev(\''+r.id+'\')">'+
+    '<div><b>'+r.label+'</b> <span class="help">+'+r.off+'-day recall'+(r.overdue?' · overdue':'')+'</span></div>'+
+    '<span class="due">'+fmtD(r.due)+'</span></div>';
+}
+function renderWeekly(){
+  const wi=+document.getElementById('wkSelect').value||0; const w=plan()[wi];
+  if(!w){ document.getElementById('wkBody').innerHTML=''; return; }
+  const rev=dueRevisions();
+  document.getElementById('wkRevToday').innerHTML = rev.length?
+    '<div class="panel" style="margin-bottom:14px"><h2>🔁 Revise today ('+rev.length+')</h2>'+rev.map(revRow).join('')+'</div>':'';
+  const v4n=readV4().length;
+  const synced='<div class="synced">🎯 <b>Chapter-test boxes tick only when you sit the TEST.</b> Sit a chapter <b>test</b> (Pool A/B) in your Test Dashboard and its box ticks here with your score — <b>practice questions don’t count</b>'+(v4n?' · '+v4n+' test'+(v4n>1?'s':'')+' detected':'')+'. <span class="help">(Works when the apps are hosted together on md-acca.github.io.)</span></div>';
+  document.getElementById('wkBody').innerHTML = synced + w.days.map((day,di)=>dayCard(day,wi,di)).join('');
+  document.getElementById('wkGoal').innerHTML = w.goal? '<b>🎯 Goal — '+w.weekNo+':</b> '+w.goal : '';
+}
+function dayCard(day,wi,di){
+  const tasks=tasksOf(day); const tests=day.tests||[]; const lecs=lecsOf(day);
+  let done=0; const total=lecs.length+tasks.length+tests.length;
+  lecs.forEach((_,li)=>{ if(S.ticks[tid(wi,di,'L'+li)]) done++; });
+  tasks.forEach(([t])=>{ if(S.ticks[tid(wi,di,t)]) done++; });
+  tests.forEach((lbl,ci)=>{ if(testDone(wi,di,ci,lbl)) done++; });
+  const allDone = total && done===total;
+  const cls = /lighter|revise|exam/i.test(day.tag||'') ? 'lite' : (day.test && day.test!=='—' ? 'mock':'');
+  const dd=parseDay(day.day); const isToday= dd && +dd===+getToday();
+  let h='<div id="day-'+wi+'-'+di+'" class="dayc'+(allDone?' done':'')+(isToday?' today':'')+'"><div class="dayh '+cls+'"><span class="d">'+esc(day.day)+'</span>'+
+    (isToday?'<span class="today-pill">TODAY</span>':'')+
+    (day.tag?'<span class="tag">'+esc(day.tag)+'</span>':'')+
+    '<span class="pct">'+done+'/'+total+'</span></div><div class="dayb">';
+  if(lecs.length){
+    lecs.forEach((lec,li)=>{ const id=tid(wi,di,'L'+li); const on=!!S.ticks[id];
+      h+='<label class="task watch'+(on?' done':'')+'"><input type="checkbox" '+(on?'checked':'')+' onchange="lecTick('+wi+','+di+','+li+')">'+
+         '<span class="lab"><span class="ic">📺 WATCH</span> '+esc(lec)+'</span></label>';
+    });
+  } else if(day.watch && String(day.watch).trim() && String(day.watch).trim()!=='—'){
+    h+='<div class="task watchnote"><span class="lab"><span class="ic">📺</span> '+esc(day.watch)+'</span></div>';
+  }
+  tasks.forEach(([t,ic])=>{
+    const id=tid(wi,di,t); const on=!!S.ticks[id];
+    h+='<label class="task '+t+(on?' done':'')+'"><input type="checkbox" '+(on?'checked':'')+' onchange="toggleTask(\''+id+'\',\''+t+'\','+wi+','+di+')">'+
+       '<span class="lab"><span class="ic">'+ic+' '+t.toUpperCase()+'</span> '+esc(day[t])+'</span></label>';
+  });
+  tests.forEach((tt,ci)=>{
+    const id=tid(wi,di,'ct'+ci); const v4=chTestStatus(chOf(tt)); const on=!!S.ticks[id]||!!v4;
+    const badge = v4? ' <span class="v4 '+(v4.pct>=50?'pass':'fail')+'">✓ done '+v4.pct+'% · '+esc(v4.set||v4.mode||'test')+' · '+v4.date+'</span>' : '';
+    h+='<label class="task ctest'+(on?' done':'')+'"><input type="checkbox" '+(on?'checked':'')+(v4?' disabled':'')+' onchange="toggleTask(\''+id+'\',\'ct\','+wi+','+di+')">'+
+       '<span class="lab"><span class="ic">🎯 TOPIC TEST</span> '+esc(tt)+badge+'</span></label>';
+  });
+  const nid=did(wi,di);
+  h+='<textarea class="note" placeholder="Note for Claude (optional): what was hard, ran out of time…" oninput="setNote(\''+nid+'\',this.value)">'+esc(S.notes[nid]||'')+'</textarea>';
+  h+='</div></div>';
+  return h;
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ---- handlers ----
+function toggleTask(id,type,wi,di){ S.ticks[id]=!S.ticks[id]; save(); render(); }
+function lecTick(wi,di,li){
+  S.ticks[tid(wi,di,'L'+li)]=!S.ticks[tid(wi,di,'L'+li)];
+  // the day's 1/3/7 revision starts when ANY of its lectures is ticked, clears when none are
+  const lecs=plan()[wi].days[di].lectures||[];
+  const any=lecs.some((_,j)=> S.ticks[tid(wi,di,'L'+j)]);
+  if(any){ if(!S.watch[did(wi,di)]) S.watch[did(wi,di)]=iso(getToday()); }
+  else { delete S.watch[did(wi,di)]; OFFS.forEach(o=>delete S.revDone[did(wi,di)+"-r"+o]); }
+  save(); render();
+}
+function setNote(id,v){ S.notes[id]=v; save(); }
+function toggleRev(id){ S.revDone[id]=!S.revDone[id]; if(!S.revDone[id]) delete S.revDone[id]; save(); render(); }
+function setOverviewScope(){ render(); }
+
+// ---- charts ----
+let ovc, prc;
+function drawOverviewChart(){
+  const el=document.getElementById('ovChart'); const fb=document.getElementById('ovChartFallback');
+  if(typeof Chart==='undefined'){ fb.textContent='(progress chart needs an internet connection for Chart.js)'; return; } fb.textContent='';
+  const labels=plan().map(w=>w.weekNo.replace('Week ','W')); const data=plan().map((w,wi)=>weekProg(w,wi).pct);
+  if(ovc) ovc.destroy();
+  ovc=new Chart(el,{type:'bar',data:{labels,datasets:[{label:'% done',data,backgroundColor:data.map(v=>v>=100?'#0f766e':v>0?'#c8a24e':'#cbd5e1'),borderRadius:6}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}});
+}
+let dwc,dac;
+function donut(elId, pct, prev){
+  if(typeof Chart==='undefined') return null;
+  const el=document.getElementById(elId); if(!el) return null;
+  if(prev) prev.destroy();
+  const col = pct>=100?'#0f766e':(pct>0?'#c8a24e':'#e2e8f0');
+  return new Chart(el,{type:'doughnut',
+    data:{datasets:[{data:[pct,100-pct],backgroundColor:[col,'#eef2f6'],borderWidth:0,borderRadius:[4,0]}]},
+    options:{cutout:'80%',responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{enabled:false}}},
+    plugins:[{id:'ctr'+elId,afterDraw(c){const a=c.chartArea;const cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;const ctx=c.ctx;ctx.save();ctx.textBaseline='middle';
+      ctx.font='600 30px "IBM Plex Sans",system-ui,Arial,sans-serif';const num=String(pct);const nw=ctx.measureText(num).width;
+      ctx.font='600 14px "IBM Plex Sans",system-ui,Arial,sans-serif';const pw=ctx.measureText('%').width;
+      const startX=cx-(nw+pw+2)/2;
+      ctx.textAlign='left';ctx.fillStyle='#0b2349';ctx.font='600 30px "IBM Plex Sans",system-ui,Arial,sans-serif';ctx.fillText(num,startX,cy);
+      ctx.fillStyle='#94a3b8';ctx.font='600 14px "IBM Plex Sans",system-ui,Arial,sans-serif';ctx.fillText('%',startX+nw+2,cy-7);
+      ctx.restore();}}]});
+}
+function drawDoughnuts(){
+  const fb=document.getElementById('donutFallback');
+  if(typeof Chart==='undefined'){ if(fb) fb.textContent='(circular charts need an internet connection for Chart.js)'; return; } if(fb) fb.textContent='';
+  const wi=+document.getElementById('ovWeek').value||0; const wk=weekProg(plan()[wi],wi); const al=allProg();
+  const lab=document.getElementById('dWeekLab'); if(lab) lab.textContent=plan()[wi]?plan()[wi].weekNo+' ('+wk.done+'/'+wk.total+')':'This week';
+  const allLab=document.querySelector('.donuts > div:nth-child(2) .dlabel'); if(allLab) allLab.textContent='Whole plan ('+al.done+'/'+al.total+')';
+  dwc=donut('dWeek',wk.pct,dwc); dac=donut('dAll',al.pct,dac);
+}
+function drawProgress(){
+  const el=document.getElementById('prChart'); const fb=document.getElementById('prFallback');
+  const a=allProg();
+  document.getElementById('prStats').innerHTML='<div class="cards">'+card(a.pct+'%','overall done',a.done+' / '+a.total+' tasks')+card(plan().length,'weeks','')+card(daysToExam(),'days to exam','')+'</div>';
+  if(typeof Chart==='undefined'){ fb.textContent='(chart needs internet for Chart.js)'; return; } fb.textContent='';
+  const labels=plan().map(w=>w.weekNo.replace('Week ','W')); const data=plan().map((w,wi)=>weekProg(w,wi).pct);
+  if(prc) prc.destroy();
+  prc=new Chart(el,{type:'line',data:{labels,datasets:[{label:'% done',data,borderColor:'#16356f',backgroundColor:'rgba(22,53,111,.12)',fill:true,tension:.35,pointBackgroundColor:data.map(v=>v>=100?'#0f766e':'#c8a24e'),pointRadius:4}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}});
+}
+
+// ---- weekend PDF ----
+function downloadWeekPDF(){
+  const wi=+document.getElementById('wkSelect').value||0; const w=plan()[wi];
+  const rev=dueRevisions();
+  let rows = w.days.map((day,di)=>{
+    const tasks=tasksOf(day);
+    const lecLines=(day.lectures||[]).map((lec,li)=>{ const on=S.ticks[tid(wi,di,'L'+li)]; return (on?'✓':'☐')+' WATCH: '+esc(lec); });
+    const taskLines=tasks.map(([t])=>{ const on=S.ticks[tid(wi,di,t)]; return (on?'✓':'☐')+' '+t.toUpperCase()+': '+esc(day[t]); });
+    const testLines=(day.tests||[]).map((tt,ci)=>{ const on=S.ticks[tid(wi,di,'ct'+ci)]; return (on?'✓':'☐')+' TOPIC TEST: '+esc(tt); });
+    const lines=lecLines.concat(taskLines,testLines).join('<br>') || (day.watch&&day.watch!=='—'?esc(day.watch):'—');
+    const note=S.notes[did(wi,di)]?('<br><i>Note: '+esc(S.notes[did(wi,di)])+'</i>'):'';
+    return '<tr><td><b>'+day.day+'</b><br>'+esc(day.tag||'')+'</td><td>'+(lines||'—')+note+'</td></tr>';
+  }).join('');
+  const p=weekProg(w,wi); const od=rev.filter(r=>r.overdue);
+  const odHtml = od.length? '<p><b>Overdue revisions ('+od.length+'):</b> '+od.map(r=>esc(r.label)+' (+'+r.off+'d)').join('; ')+'</p>':'<p>No overdue revisions.</p>';
+  document.getElementById('printReport').innerHTML=
+    '<h2>MA Roadmap — '+esc(w.weekNo)+' progress ('+esc(w.dates)+')</h2>'+
+    '<p>Completed <b>'+p.done+' / '+p.total+'</b> tasks ('+p.pct+'%). Days to exam: '+daysToExam()+'. '+
+    (S.settings.job?('<b>Job note:</b> '+esc(S.settings.job)+'. '):'')+'</p>'+ odHtml +
+    '<table><tr><th>Day</th><th>Tasks (✓ done / ☐ not done)</th></tr>'+rows+'</table>'+
+    '<p style="margin-top:10px"><b>For Claude:</b> roll any ☐ unfinished tasks + overdue revisions into next week, re-pace to my remaining days, keep heavy/CRITICAL topics protected, and return the updated plan as JSON in the documented format. '+
+    (S.settings.job?'Adjust for my job note above.':'')+'</p>';
+  document.body.classList.add('print-mode');
+  window.print();
+}
+window.addEventListener('afterprint',()=>document.body.classList.remove('print-mode'));
+
+// ---- import / settings ----
+function loadJSON(){
+  const box=document.getElementById('importBox'); const msg=document.getElementById('importMsg');
+  let data;
+  try{ data=JSON.parse(box.value); }catch(e){ msg.className='msg err'; msg.textContent='That isn’t valid JSON. Paste exactly what Claude gave you.'; return; }
+  const weeks = Array.isArray(data)? data : (data.weeks||null);
+  if(!weeks || !Array.isArray(weeks) || !weeks.every(w=>w&&Array.isArray(w.days))){ msg.className='msg err'; msg.textContent='JSON loaded but it’s not a plan (need an array of weeks, each with a "days" array).'; return; }
+  snapshot(); S.plan=normalizePlan(weeks); save();
+  msg.className='msg ok'; msg.textContent='Loaded ✓ — '+weeks.length+' weeks. Your existing ticks are kept where the day/task still matches.';
+  fillWeekSelect(document.getElementById('ovWeek')); fillWeekSelect(document.getElementById('wkSelect'),true);
+  render();
+}
+function copyFormat(){
+  const sample=JSON.stringify([{weekNo:"Week 1",dates:"9–15 Jun",theme:"Foundations",goal:"By Sunday: …",days:[{day:"Tue 9 Jun",tag:"Foundations",watch:"Intro to Cost Accounting — Lec 1–3",practice:"Study Hub Ch1 — 22 Qs",revise:"—",test:"—"}]}],null,1);
+  const note="// MA Roadmap Tracker — plan JSON format. Return an ARRAY of weeks.\n// Each week: weekNo, dates, theme, goal, days[]. Each day: day, tag, watch, practice, revise, test (use \"—\" for none).\n"+sample;
+  navigator.clipboard && navigator.clipboard.writeText(note);
+  const msg=document.getElementById('importMsg'); msg.className='msg ok'; msg.textContent='Format copied to clipboard — paste it to Claude alongside your weekly PDF.';
+}
+function saveSettings(){
+  S.settings.exam=document.getElementById('setExam').value||DEFAULT_EXAM;
+  S.settings.hours=document.getElementById('setHours').value;
+  S.settings.days=document.getElementById('setDays').value;
+  S.settings.job=document.getElementById('setJob').value;
+  // share the exam date with the Master + Test dashboards so all three agree
+  try{ const db=JSON.parse(localStorage.getItem(V4_DB)||'{}'); db.examDate=S.settings.exam; localStorage.setItem(V4_DB,JSON.stringify(db)); }catch(e){}
+  try{ localStorage.setItem('ma_exam_date', S.settings.exam); }catch(e){}
+  save(); const m=document.getElementById('setMsg'); m.className='msg ok'; m.textContent='Saved ✓ · exam date shared with your other dashboards'; setTimeout(()=>m.className='msg',1600); render();
+}
+function syncExamFromShared(){ try{ const db=JSON.parse(localStorage.getItem(V4_DB)||'{}'); if(db&&db.examDate && db.examDate!==S.settings.exam){ S.settings.exam=db.examDate; const f=document.getElementById('setExam'); if(f) f.value=db.examDate; return true; } }catch(e){} return false; }
+function exportBackup(){
+  const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ma_roadmap_backup.json'; a.click();
+}
+function resetAll(){ if(!confirm('Clear all ticks, notes and revision history? (Your loaded plan stays.)')) return; snapshot(); S.ticks={};S.notes={};S.watch={};S.revDone={}; save(); render(); }
+function isoOf(dayStr){ const d=parseDay(dayStr); return d? iso(d): iso(getToday()); }
+function seedSample(){
+  S.ticks={};S.watch={};S.notes={};S.revDone={};
+  const P=plan();
+  [0,1].forEach(wi=>{ if(!P[wi])return; P[wi].days.forEach((day,di)=>{
+    const doneDay = wi===0 ? true : di<4;      // Week 1 fully done, Week 2 first ~4 days
+    if(doneDay){ (day.lectures||[]).forEach((_,li)=> S.ticks[tid(wi,di,'L'+li)]=true); if((day.lectures||[]).length) S.watch[did(wi,di)]=isoOf(day.day); }
+    tasksOf(day).forEach(([t])=>{ if(doneDay) S.ticks[tid(wi,di,t)]=true; });
+    (day.tests||[]).forEach((_,ci)=>{ if(doneDay) S.ticks[tid(wi,di,'ct'+ci)]=true; });
+  });});
+  if(P[1]&&P[1].days[2]) S.notes[did(1,2)]='Labour ratios a bit confusing — needs another pass';
+  // realistic: kept up with most revisions, a few most-recent still due
+  const due=dueRevisions(); due.slice(0, Math.max(0,due.length-4)).forEach(r=> S.revDone[r.id]=true);
+  // demo a PARTIAL day: leave the last lecture of Tue 9 Jun unticked, to show "done some, roll one over"
+  const d0=(P[0]&&P[0].days[0]&&P[0].days[0].lectures)||[]; if(d0.length>1) delete S.ticks[tid(0,0,'L'+(d0.length-1))];
+  _v4cache=null;
+}
+function loadSample(){
+  if(!confirm('Load sample progress so you can preview the dashboard? This overwrites your current ticks (you can Reset after).')) return;
+  seedSample(); save(); render();
+  const m=document.getElementById('setMsg'); if(m){m.className='msg ok';m.textContent='Sample progress loaded — explore Overview & Weekly, then Reset all ticks to start clean.';}
+}
+
+// ---- init ----
+function init(){
+  syncExamFromShared();
+  document.getElementById('setExam').value=(S.settings.exam||DEFAULT_EXAM);
+  document.getElementById('setHours').value=S.settings.hours||8;
+  document.getElementById('setDays').value=S.settings.days||7;
+  document.getElementById('setJob').value=S.settings.job||'';
+  document.getElementById('buildStamp').textContent=new Date().toISOString().slice(0,10);
+  fillWeekSelect(document.getElementById('ovWeek'));
+  const wk=document.getElementById('wkSelect'); fillWeekSelect(wk,true); wk.value=defaultWeek();
+  if(new URLSearchParams(location.search).get('sample')){ seedSample(); save(); }
+  render();
+  const tb=new URLSearchParams(location.search).get('tab'); if(tb) showTab(tb);
+}
+// live sync: another tab (Test/Master dashboard) wrote a score or exam date -> refresh instantly
+window.addEventListener('storage', e=>{ if(e.key===V4_DB||e.key===V4_QUEUE){ _v4cache=null; syncExamFromShared(); render(); } });
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ _v4cache=null; syncExamFromShared(); render(); } });
+init();
+</script>
+</body>
+</html>
